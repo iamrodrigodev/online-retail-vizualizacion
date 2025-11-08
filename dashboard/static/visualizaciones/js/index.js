@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     const loader = document.getElementById('loader');
     const contentContainer = document.getElementById('content-container');
+    const salesContainer = document.getElementById('sales-container');
     const mapDiv = document.getElementById('worldMap');
     const profilesDiv = document.getElementById('customerProfiles');
+    const salesDiv = document.getElementById('salesTrend');
     
     // Variable para almacenar el país seleccionado
     let selectedCountry = null;
@@ -20,10 +22,11 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     const selectedColor = '#0824a4'; // Color La Salle para selección
 
-    if (mapDiv && profilesDiv && contentContainer && loader && 
+    if (mapDiv && profilesDiv && salesDiv && contentContainer && salesContainer && loader && 
         typeof Plotly !== 'undefined' && 
         typeof worldMapData !== 'undefined' && 
-        typeof customerProfilesData !== 'undefined') {
+        typeof customerProfilesData !== 'undefined' &&
+        typeof salesTrendData !== 'undefined') {
         
         // Función para configurar eventos de clic en el gráfico de perfiles
         function setupProfileClickEvents() {
@@ -72,12 +75,18 @@ document.addEventListener('DOMContentLoaded', function () {
                             selectedProfile = null;
                             const originalColors = profiles.map(name => profileColors[name] || '#6c757d');
                             Plotly.restyle(profilesDiv, {'marker.color': [originalColors]}, [0]);
+                            
+                            // Actualizar gráfico de ventas
+                            updateSalesTrend();
                         } else {
                             selectedProfile = clickedProfile;
                             const colors = profiles.map(name => 
                                 name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
                             );
                             Plotly.restyle(profilesDiv, {'marker.color': [colors]}, [0]);
+                            
+                            // Actualizar gráfico de ventas
+                            updateSalesTrend();
                         }
                     }
                 };
@@ -98,6 +107,41 @@ document.addEventListener('DOMContentLoaded', function () {
             if (svgContainer) {
                 svgContainer.style.cursor = 'pointer';
             }
+        }
+        
+        // Función para actualizar el gráfico de tendencia de ventas
+        function updateSalesTrend() {
+            // Construir URL con parámetros
+            let url = '/api/sales-trend/';
+            const params = new URLSearchParams();
+            
+            if (selectedCountry) {
+                params.append('country', selectedCountry);
+            }
+            if (selectedProfile) {
+                params.append('profile', selectedProfile);
+            }
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            // Hacer petición al servidor
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const graphData = JSON.parse(data.graph);
+                    
+                    Plotly.react(salesDiv, graphData.data, graphData.layout).then(function() {
+                        // Deshabilitar dragmode
+                        Plotly.relayout(salesDiv, {
+                            'dragmode': false
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar tendencia de ventas:', error);
+                });
         }
         
         // Guardar la escala y centro inicial del mapa
@@ -127,9 +171,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         }).then(function() {
-            // Una vez que ambos gráficos se han renderizado, oculta el loader y muestra el contenido
+            // Renderizar el gráfico de tendencia de ventas
+            return Plotly.newPlot(salesDiv, salesTrendData.data, salesTrendData.layout, {
+                responsive: true,
+                displayModeBar: false,
+                staticPlot: false
+            }).then(function() {
+                // Deshabilitar dragmode
+                Plotly.relayout(salesDiv, {
+                    'dragmode': false
+                });
+            });
+        }).then(function() {
+            // Una vez que todos los gráficos se han renderizado, oculta el loader y muestra el contenido
             loader.style.display = 'none';
             contentContainer.style.display = 'grid';
+            salesContainer.style.display = 'block';
             
             // Configurar eventos de clic en el gráfico de perfiles
             setupProfileClickEvents();
@@ -240,6 +297,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             selectedProfile = null;
                         }
                     }
+                    
+                    // Actualizar gráfico de ventas
+                    updateSalesTrend();
                 });
             } else {
                 // Seleccionar el nuevo país
@@ -285,6 +345,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                     selectedProfile = null;
                                 }
                             }
+                            
+                            // Actualizar gráfico de ventas
+                            updateSalesTrend();
                         });
                     })
                     .catch(error => {

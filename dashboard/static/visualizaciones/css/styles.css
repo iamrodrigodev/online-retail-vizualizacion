@@ -85,6 +85,13 @@ body {
     align-items: flex-start;
 }
 
+/* Contenedor para el gráfico de ventas (ancho completo) */
+.sales-trend-container {
+    max-width: 1600px;
+    margin: 20px auto 0;
+    width: 100%;
+}
+
 /* Cards individuales para cada gráfico */
 .chart-card {
     flex: 1 1 50%;
@@ -95,6 +102,11 @@ body {
     padding: 20px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-sizing: border-box;
+}
+
+.chart-card.full-width {
+    flex: 1 1 100%;
+    max-width: 100%;
 }
 
 .chart-card:hover {
@@ -261,6 +273,10 @@ h1 {
 
 #customerProfiles {
     height: 500px !important;
+}
+
+#salesTrend {
+    height: 400px !important;
 }
 
 /* Forzar cursor pointer en las barras del gráfico de perfiles */

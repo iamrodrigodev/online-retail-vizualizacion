@@ -40,6 +40,12 @@
                 <div id="customerProfiles" class="plotly-chart"></div>
             </div>
         </div>
+        <!-- Gráfico de tendencia de ventas (ancho completo) -->
+        <div class="sales-trend-container" id="sales-container" style="display: none;">
+            <div class="chart-card full-width">
+                <div id="salesTrend" class="plotly-chart sales-chart"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -61,6 +67,7 @@
         // Pasa los datos de Django a variables de JavaScript
         const worldMapData = JSON.parse('{{ worldMapJSON|safe }}');
         const customerProfilesData = JSON.parse('{{ customerProfilesJSON|safe }}');
+        const salesTrendData = JSON.parse('{{ salesTrendJSON|safe }}');
         const countriesWithData = new Set(JSON.parse('{{ dataset_countries|safe }}'));
     </script>
     <script src="{% static 'visualizaciones/js/index.js' %}"></script>
