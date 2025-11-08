@@ -56,9 +56,9 @@ def create_world_map_plot():
         # Configuración de la leyenda
         showlegend=True,
         legend=dict(
-            x=0.02,  # Posición horizontal (0-1, de izquierda a derecha)
-            y=0.92,  # Posición vertical ajustada para evitar solapar el título
-            xanchor='left',
+            x=-0.02,  # Posición fuera del gráfico, a la izquierda
+            y=1,  # Alineada arriba
+            xanchor='right',
             yanchor='top',
             bgcolor='rgba(255, 255, 255, 0.9)',  # Fondo blanco semi-transparente
             bordercolor='#e0e0e0',
