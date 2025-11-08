@@ -17,6 +17,11 @@ def create_customer_profiles_plot(country=None):
     percentages = data['percentages']
     counts = data['counts']
     
+    # Ajustar valores muy pequeños para que sean visibles
+    # Si el porcentaje es menor a 1%, se muestra como 1% en la barra
+    # pero se mantiene el valor real para el hover y texto
+    percentages_display = [max(pct, 1.0) for pct in percentages]
+    
     # Colores para cada perfil
     color_map = {
         'Minorista Estándar': '#9b59b6',  # Morado
@@ -31,18 +36,18 @@ def create_customer_profiles_plot(country=None):
     fig = go.Figure(data=[
         go.Bar(
             x=perfiles,
-            y=percentages,
-            text=[f'{pct:.1f}%' for pct in percentages],
+            y=percentages_display,  # Usar valores ajustados para visualización
+            text=[f'{pct:.1f}%' for pct in percentages],  # Texto con valor real
             textposition='outside',
             marker=dict(
                 color=colors,
                 line=dict(color='white', width=2)
             ),
             hovertemplate='<b>%{x}</b><br>' +
-                         'Porcentaje: %{y:.2f}%<br>' +
-                         'Transacciones: %{customdata:,}<br>' +
+                         'Porcentaje: %{customdata[0]:.2f}%<br>' +
+                         'Transacciones: %{customdata[1]:,}<br>' +
                          '<extra></extra>',
-            customdata=counts
+            customdata=list(zip(percentages, counts))  # Pasar valor real para hover
         )
     ])
     
@@ -77,7 +82,7 @@ def create_customer_profiles_plot(country=None):
                 'font': {'size': 14, 'color': '#2c3e50'}
             },
             'tickfont': {'size': 12, 'color': '#2c3e50'},
-            'range': [0, max(percentages) * 1.15]  # Espacio para los labels
+            'range': [0, max(percentages_display) * 1.15]  # Espacio para los labels
         },
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
