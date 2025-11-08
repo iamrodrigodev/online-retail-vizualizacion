@@ -55,6 +55,8 @@ def get_sales_trend(request):
     country = request.GET.get('country', None)
     customer_profile = request.GET.get('profile', None)
     
+    print(f"DEBUG - get_sales_trend: country={country}, profile={customer_profile}")
+    
     # Crear el gráfico con los filtros aplicados
     sales_trend_fig = create_sales_trend_plot(country=country, customer_profile=customer_profile)
     

@@ -51,13 +51,15 @@ def create_sales_trend_plot(country=None, customer_profile=None):
     
     # Determinar el título según los filtros aplicados
     if country and customer_profile:
-        title_text = f"Tendencia de Ventas en {country} - {customer_profile}"
+        title_text = f"Ventas en {country} con Perfil {customer_profile}"
     elif country:
-        title_text = f"Tendencia de Ventas en {country}"
+        title_text = f"Ventas en {country}"
     elif customer_profile:
-        title_text = f"Tendencia de Ventas - {customer_profile}"
+        title_text = f"Ventas con Perfil {customer_profile}"
     else:
-        title_text = "Tendencia de Ventas"
+        title_text = "Ventas"
+    
+    print(f"DEBUG - plot.py: country={country}, profile={customer_profile}, title={title_text}")
     
     # Configurar el layout
     fig.update_layout(

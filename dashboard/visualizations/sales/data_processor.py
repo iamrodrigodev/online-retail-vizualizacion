@@ -5,6 +5,16 @@ import polars as pl
 from dashboard.visualizations.shared.data_loader import load_online_retail_data
 
 
+def detectar_outliers_iqr(df, columna):
+    """Detecta outliers usando el método IQR"""
+    Q1 = df[columna].quantile(0.25)
+    Q3 = df[columna].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    return lower_bound, upper_bound
+
+
 def get_sales_trend_data(country=None, customer_profile=None):
     """
     Obtiene los datos de tendencia de ventas diarias.
@@ -27,10 +37,30 @@ def get_sales_trend_data(country=None, customer_profile=None):
     
     # Filtrar por perfil de cliente si se especifica
     if customer_profile:
-        # Cargar la clasificación de perfiles
-        from dashboard.visualizations.customer_profiles.data_processor import classify_customer_profiles
-        df = classify_customer_profiles(df)
-        df = df.filter(pl.col('perfil') == customer_profile)
+        # Crear columna Total si no existe
+        if 'Total' not in df.columns:
+            df = df.with_columns(
+                (pl.col('Quantity') * pl.col('UnitPrice')).alias('Total')
+            )
+        
+        # Detectar outliers en Total y UnitPrice
+        total_lower, total_upper = detectar_outliers_iqr(df, 'Total')
+        price_lower, price_upper = detectar_outliers_iqr(df, 'UnitPrice')
+        
+        # Clasificar cada transacción
+        df = df.with_columns(
+            pl.when((pl.col('Total') > total_upper) & (pl.col('UnitPrice') <= price_upper))
+            .then(pl.lit('Mayorista Estándar'))
+            .when((pl.col('Total') <= total_upper) & (pl.col('UnitPrice') > price_upper))
+            .then(pl.lit('Minorista Lujo'))
+            .when((pl.col('Total') > total_upper) & (pl.col('UnitPrice') > price_upper))
+            .then(pl.lit('Mayorista Lujo'))
+            .otherwise(pl.lit('Minorista Estándar'))
+            .alias('Perfil')
+        )
+        
+        # Filtrar por el perfil especificado
+        df = df.filter(pl.col('Perfil') == customer_profile)
     
     # Asegurar que InvoiceDate sea datetime
     df = df.with_columns([

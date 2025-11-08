@@ -28,6 +28,43 @@ document.addEventListener('DOMContentLoaded', function () {
         typeof customerProfilesData !== 'undefined' &&
         typeof salesTrendData !== 'undefined') {
         
+        // Función para actualizar el gráfico de tendencia de ventas
+        function updateSalesTrend() {
+            // Construir URL con parámetros
+            let url = '/api/sales-trend/';
+            const params = new URLSearchParams();
+            
+            if (selectedCountry) {
+                params.append('country', selectedCountry);
+            }
+            if (selectedProfile) {
+                params.append('profile', selectedProfile);
+            }
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            console.log('Actualizando ventas con:', { country: selectedCountry, profile: selectedProfile, url: url });
+            
+            // Hacer petición al servidor
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const graphData = JSON.parse(data.graph);
+                    
+                    Plotly.react(salesDiv, graphData.data, graphData.layout).then(function() {
+                        // Deshabilitar dragmode
+                        Plotly.relayout(salesDiv, {
+                            'dragmode': false
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar tendencia de ventas:', error);
+                });
+        }
+        
         // Función para configurar eventos de clic en el gráfico de perfiles
         function setupProfileClickEvents() {
             // Remover eventos anteriores para evitar duplicados
@@ -107,41 +144,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (svgContainer) {
                 svgContainer.style.cursor = 'pointer';
             }
-        }
-        
-        // Función para actualizar el gráfico de tendencia de ventas
-        function updateSalesTrend() {
-            // Construir URL con parámetros
-            let url = '/api/sales-trend/';
-            const params = new URLSearchParams();
-            
-            if (selectedCountry) {
-                params.append('country', selectedCountry);
-            }
-            if (selectedProfile) {
-                params.append('profile', selectedProfile);
-            }
-            
-            if (params.toString()) {
-                url += '?' + params.toString();
-            }
-            
-            // Hacer petición al servidor
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const graphData = JSON.parse(data.graph);
-                    
-                    Plotly.react(salesDiv, graphData.data, graphData.layout).then(function() {
-                        // Deshabilitar dragmode
-                        Plotly.relayout(salesDiv, {
-                            'dragmode': false
-                        });
-                    });
-                })
-                .catch(error => {
-                    console.error('Error al cargar tendencia de ventas:', error);
-                });
         }
         
         // Guardar la escala y centro inicial del mapa
