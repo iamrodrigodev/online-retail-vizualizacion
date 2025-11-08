@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Retail</title>
+    <link rel="stylesheet" href="{% static 'visualizaciones/css/styles.css' %}">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <link rel="icon" type="image/png" href="{% static 'visualizaciones/images/retail.png' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" aria-label="Barra de navegación principal">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <img
+                    src="{% static 'visualizaciones/images/ulasalle.webp' %}"
+                    alt="Logo Universidad La Salle de Arequipa"
+                    class="logo-image"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    draggable="false"
+                    style="pointer-events: none; user-select: none;"
+                >
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h1>Análisis de Transacciones por Hora</h1>
+            <p class="subtitle">Mapa de calor interactivo de transacciones de Online Retail</p>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Cargando datos...</p>
+            </div>
+
+            <div id="error" style="display: none;"></div>
+            <div id="heatmap"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>
+            Inteligencia de Negocios y Mineria de Datos - Online Retail Dataset
+        </span>
+        <span class="footer-dev">
+            <a href="https://github.com/RodrigoStranger" target="_blank" rel="noopener noreferrer" class="footer-github">
+                <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                Rodrigo Infanzón Acosta
+            </a>
+        </span>
+    </footer>
+
+    <script src="{% static 'visualizaciones/js/index.js' %}"></script>
+</body>
+</html>
