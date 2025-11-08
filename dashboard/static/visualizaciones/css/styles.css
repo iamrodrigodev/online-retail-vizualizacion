@@ -1,15 +1,212 @@
-/* Add your styles here */
+:root {
+    --color-lasalle: #0824a4;
+    --mobile-padding: 1rem;
+    --tablet-padding: 2rem;
+    --desktop-padding: 3rem;
+    --navbar-height: 65px;
+    --logo-height: 50px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    background-color: var(--color-lasalle);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    width: 100%;
+    height: var(--navbar-height);
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.navbar-container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0 0 0 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
 
 .logo-image {
-    pointer-events: none;
-    user-select: none;
+    height: var(--logo-height);
+    width: auto;
+    transition: opacity 0.3s ease;
+    display: block;
 }
 
-#error {
-    display: none;
+/* Main content wrapper */
+.main-content {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--navbar-height);
+    padding: 20px;
 }
 
-.footer-github svg {
-    vertical-align: middle;
-    margin-right: 4px;
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 30px;
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 2.5em;
+}
+
+.subtitle {
+    text-align: center;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+#heatmap {
+    width: 100%;
+    min-height: 700px;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: #3498db;
+}
+
+.error {
+    background-color: #e74c3c;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+ @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Footer */
+.footer {
+    width: 100vw;
+    background: var(--color-lasalle);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem var(--mobile-padding);
+    text-align: center;
+    font-size: 1rem;
+    border-top: none;
+    gap: 0.3rem;
+    margin-top: 0;
+    left: 0;
+    right: 0;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    min-height: 70px;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 100%;
+}
+
+.footer-github {
+    color: white;
+    text-decoration: underline;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.footer-github:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.footer-link {
+    color: white;
+    text-decoration: underline;
+    margin: 0 0.3rem;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    color: #fff;
+}
+
+/* Media queries */
+ @media (min-width: 768px) {
+    .navbar-container {
+        padding-left: 30px !important;
+    }
+    .footer {
+        padding-left: var(--tablet-padding);
+        padding-right: var(--tablet-padding);
+    }
+}
+
+ @media (min-width: 1024px) {
+    .navbar-container {
+        padding-left: 40px !important;
+    }
+    .footer {
+        padding-left: var(--desktop-padding);
+        padding-right: var(--desktop-padding);
+    }
 }
