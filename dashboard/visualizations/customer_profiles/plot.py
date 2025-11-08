@@ -27,7 +27,7 @@ def create_customer_profiles_plot(country=None):
         'Minorista Estándar': '#9b59b6',  # Morado
         'Mayorista Estándar': '#28a745',  # Verde
         'Minorista Lujo': '#ffc107',      # Amarillo
-        'Mayorista Lujo': '#0824a4'       # Azul La Salle
+        'Mayorista Lujo': '#00bcd4'       # Celeste
     }
     
     colors = [color_map.get(perfil, '#6c757d') for perfil in perfiles]
