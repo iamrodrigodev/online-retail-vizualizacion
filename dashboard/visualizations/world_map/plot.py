@@ -16,18 +16,37 @@ def create_world_map_plot():
     dataset_countries = df['Country'].unique().to_list()
     total_countries = len(dataset_countries)
 
-    # Crear una figura Choropleth
-    fig = go.Figure(data=go.Choropleth(
+    # Crear dos traces: uno para países con ventas (gris) y otro para país seleccionado (azul)
+    fig = go.Figure()
+    
+    # Trace 1: Países con ventas (gris)
+    fig.add_trace(go.Choropleth(
         locations=dataset_countries,
         locationmode='country names',
-        z=[1] * len(dataset_countries),  # Valor ficticio para asignar color
-        colorscale=[[0, '#6c757d'], [1, '#6c757d']], # Escala de un solo color (gris)
-        showscale=False, # Ocultar la barra de colores
-        marker_line_color='white', # Color de las fronteras
+        z=[1] * len(dataset_countries),
+        colorscale=[[0, '#6c757d'], [1, '#6c757d']],
+        showscale=False,
+        marker_line_color='white',
         marker_line_width=0.5,
-        hoverinfo='location', # Mostrar solo el nombre del país al pasar el cursor
-        name='Países con ventas',  # Nombre para la leyenda
-        showlegend=True  # Mostrar en la leyenda
+        hoverinfo='location',
+        name='Países con ventas',
+        showlegend=True,
+        visible=True
+    ))
+    
+    # Trace 2: País seleccionado (azul La Salle) - inicialmente con un país invisible
+    fig.add_trace(go.Choropleth(
+        locations=[''],  # Inicialmente vacío pero con un elemento
+        locationmode='country names',
+        z=[1],
+        colorscale=[[0, '#0824a4'], [1, '#0824a4']],
+        showscale=False,
+        marker_line_color='white',
+        marker_line_width=0.5,
+        hoverinfo='location',
+        name='País seleccionado',
+        showlegend=True,
+        visible=True
     ))
 
     # Actualizar el layout del mapa
@@ -49,7 +68,7 @@ def create_world_map_plot():
             landcolor='#f8f9fa', # Color para países no presentes en el dataset
             bgcolor='rgba(0,0,0,0)', # Fondo transparente
         ),
-        margin={"r":0,"t":60,"l":0,"b":0}, # Ajustar margen superior para el título
+        margin={"r":0,"t":60,"l":0,"b":0}, # Ajustar margen superior
         paper_bgcolor='rgba(0,0,0,0)', # Fondo del papel transparente
         plot_bgcolor='rgba(0,0,0,0)', # Fondo del gráfico transparente
         
@@ -74,23 +93,19 @@ def create_world_map_plot():
         # Anotación para mostrar la cantidad de países
         annotations=[
             dict(
-                text=f'Total de países: {total_countries}',
+                text=f'Países donde se han realizado ventas: {total_countries}',
                 xref='paper',
                 yref='paper',
                 x=0.5,
-                y=-0.05,
+                y=0.92,
                 xanchor='center',
                 yanchor='top',
                 showarrow=False,
                 font=dict(
-                    size=16,
-                    color='#2c3e50',
+                    size=14,
+                    color='#000000',
                     family='Arial, sans-serif'
-                ),
-                bgcolor='rgba(255, 255, 255, 0.8)',
-                bordercolor='#e0e0e0',
-                borderwidth=1,
-                borderpad=8
+                )
             )
         ]
     )

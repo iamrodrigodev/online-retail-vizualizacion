@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const loader = document.getElementById('loader');
     const contentContainer = document.getElementById('content-container');
     const mapDiv = document.getElementById('worldMap');
+    
+    // Variable para almacenar el país seleccionado
+    let selectedCountry = null;
+    // Array de todos los países con datos (convertir Set a Array)
+    const allCountries = Array.from(countriesWithData);
 
     if (mapDiv && contentContainer && loader && typeof Plotly !== 'undefined' && typeof graphData !== 'undefined') {
         Plotly.newPlot(mapDiv, graphData.data, graphData.layout, {
@@ -13,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
             contentContainer.style.display = 'block';
         });
 
-        // Lógica para la interactividad del cursor y clics
+        // Lógica para la interactividad del cursor
         mapDiv.on('plotly_hover', function (data) {
             const point = data.points[0];
             const countryName = point.location;
@@ -29,12 +34,53 @@ document.addEventListener('DOMContentLoaded', function () {
             mapDiv.style.cursor = 'default';
         });
 
+        // Lógica para manejar los clics en países
         mapDiv.on('plotly_click', function (data) {
             const point = data.points[0];
             const countryName = point.location;
+            
+            console.log('Click detectado en:', countryName);
 
+            // Verificar que el país esté en el dataset
             if (!countriesWithData.has(countryName)) {
+                console.log('País no tiene datos, ignorando click');
                 return false;
+            }
+
+            console.log('País válido, procesando selección');
+            
+            // Si se hace click en el país ya seleccionado, deseleccionarlo
+            if (selectedCountry === countryName) {
+                console.log('Deseleccionando país:', countryName);
+                selectedCountry = null;
+                
+                // Actualizar ambos traces: todos los países en gris, ninguno en azul
+                Plotly.update(mapDiv, {
+                    'locations': [allCountries, ['']],
+                    'z': [[...Array(allCountries.length).fill(1)], [1]]
+                }, {}, [0, 1]).then(() => {
+                    console.log('País deseleccionado exitosamente');
+                }).catch(err => {
+                    console.error('Error al deseleccionar:', err);
+                });
+            } else {
+                // Seleccionar el nuevo país
+                console.log('Seleccionando país:', countryName);
+                
+                // Filtrar el país seleccionado de la lista de países con ventas
+                const countriesWithoutSelected = allCountries.filter(c => c !== countryName);
+                
+                selectedCountry = countryName;
+                
+                // Actualizar ambos traces: países sin el seleccionado en gris, país seleccionado en azul
+                Plotly.update(mapDiv, {
+                    'locations': [countriesWithoutSelected, [countryName]],
+                    'z': [[...Array(countriesWithoutSelected.length).fill(1)], [1]]
+                }, {}, [0, 1]).then(() => {
+                    console.log('País seleccionado exitosamente:', countryName);
+                }).catch(err => {
+                    console.error('Error al seleccionar:', err);
+                });
             }
         });
     } else {
