@@ -1,1 +1,6 @@
 /* Add your styles here */
+
+.logo-image {
+    pointer-events: none;
+    user-select: none;
+}
