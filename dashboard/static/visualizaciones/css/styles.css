@@ -210,3 +210,13 @@ h1 {
         padding-right: var(--desktop-padding);
     }
 }
+/* Estilos para el indicador de carga */
+#loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh; /* Altura mínima para centrar en la parte visible */
+    font-size: 1.5rem;
+    color: #6c757d;
+    font-weight: 500;
+}
