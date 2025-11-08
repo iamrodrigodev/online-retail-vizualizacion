@@ -1,0 +1,15 @@
+/* Add your styles here */
+
+.logo-image {
+    pointer-events: none;
+    user-select: none;
+}
+
+#error {
+    display: none;
+}
+
+.footer-github svg {
+    vertical-align: middle;
+    margin-right: 4px;
+}
