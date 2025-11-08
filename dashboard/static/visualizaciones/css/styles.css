@@ -263,6 +263,22 @@ h1 {
     height: 500px !important;
 }
 
+/* Forzar cursor pointer en las barras del gráfico de perfiles */
+#customerProfiles .plotly .nsewdrag {
+    cursor: pointer !important;
+}
+
+#customerProfiles .bars .point {
+    cursor: pointer !important;
+}
+
+/* Cursor pointer en las etiquetas de texto sobre las barras */
+#customerProfiles text.bar-text,
+#customerProfiles .text-and-icon text,
+#customerProfiles g.barlayer text {
+    cursor: pointer !important;
+}
+
 /* Responsive: en pantallas pequeñas, apilar verticalmente */
 @media (max-width: 1200px) {
     .charts-container {

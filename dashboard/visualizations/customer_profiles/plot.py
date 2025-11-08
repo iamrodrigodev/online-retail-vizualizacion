@@ -47,7 +47,8 @@ def create_customer_profiles_plot(country=None):
                          'Porcentaje: %{customdata[0]:.2f}%<br>' +
                          'Transacciones: %{customdata[1]:,}<br>' +
                          '<extra></extra>',
-            customdata=list(zip(percentages, counts))  # Pasar valor real para hover
+            customdata=list(zip(percentages, counts)),  # Pasar valor real para hover
+            showlegend=False  # No mostrar las barras en la leyenda
         )
     ])
     
@@ -86,25 +87,66 @@ def create_customer_profiles_plot(country=None):
         },
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin={"r": 20, "t": 80, "l": 60, "b": 80},
-        showlegend=False,
+        margin={"r": 20, "t": 100, "l": 60, "b": 100},
+        showlegend=True,
+        dragmode=False,
+        hovermode='closest',
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.3,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#cccccc",
+            borderwidth=1,
+            font=dict(size=10, color='#2c3e50'),
+            itemclick=False,
+            itemdoubleclick=False
+        ),
         annotations=[
             dict(
                 text=f'Total de transacciones: {data["total_transacciones"]:,}',
                 xref='paper',
                 yref='paper',
                 x=0.5,
-                y=0.92,
+                y=0.98,
                 xanchor='center',
                 yanchor='top',
                 showarrow=False,
                 font=dict(
-                    size=14,
+                    size=12,
                     color='#000000',
                     family='Arial, sans-serif'
                 )
             )
         ]
     )
+    
+    # Agregar trazas invisibles para la leyenda
+    # Leyenda de colores de perfiles
+    for perfil, color in color_map.items():
+        fig.add_trace(go.Scatter(
+            x=[None],
+            y=[None],
+            mode='markers',
+            marker=dict(size=10, color=color, symbol='square'),
+            showlegend=True,
+            name=perfil,
+            hoverinfo='skip'
+        ))
+    
+    # Leyenda para perfil seleccionado
+    fig.add_trace(go.Scatter(
+        x=[None],
+        y=[None],
+        mode='markers',
+        marker=dict(size=10, color='#0824a4', symbol='square'),
+        showlegend=True,
+        name='Perfil seleccionado',
+        hoverinfo='skip'
+    ))
     
     return fig

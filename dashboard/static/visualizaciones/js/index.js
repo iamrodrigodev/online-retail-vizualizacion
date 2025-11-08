@@ -6,13 +6,99 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Variable para almacenar el país seleccionado
     let selectedCountry = null;
+    // Variable para almacenar el perfil seleccionado
+    let selectedProfile = null;
     // Array de todos los países con datos (convertir Set a Array)
     const allCountries = Array.from(countriesWithData);
+    
+    // Mapa de colores originales de los perfiles
+    const profileColors = {
+        'Minorista Estándar': '#9b59b6',
+        'Mayorista Estándar': '#28a745',
+        'Minorista Lujo': '#ffc107',
+        'Mayorista Lujo': '#00bcd4'
+    };
+    const selectedColor = '#0824a4'; // Color La Salle para selección
 
     if (mapDiv && profilesDiv && contentContainer && loader && 
         typeof Plotly !== 'undefined' && 
         typeof worldMapData !== 'undefined' && 
         typeof customerProfilesData !== 'undefined') {
+        
+        // Función para configurar eventos de clic en el gráfico de perfiles
+        function setupProfileClickEvents() {
+            // Remover eventos anteriores para evitar duplicados
+            profilesDiv.removeAllListeners('plotly_click');
+            profilesDiv.removeAllListeners('plotly_hover');
+            profilesDiv.removeAllListeners('plotly_unhover');
+            
+            // Agregar listener general al contenedor del gráfico para capturar todos los clicks
+            const graphDiv = profilesDiv.querySelector('.svg-container');
+            if (graphDiv) {
+                // Remover listener previo si existe
+                const oldListener = graphDiv._clickListener;
+                if (oldListener) {
+                    graphDiv.removeEventListener('click', oldListener);
+                }
+                
+                // Crear nuevo listener
+                const clickListener = function(event) {
+                    // Obtener datos actuales
+                    const currentData = profilesDiv.data[0];
+                    if (!currentData || !currentData.x) return;
+                    
+                    const profiles = currentData.x;
+                    
+                    // Obtener el área del gráfico
+                    const plotArea = profilesDiv.querySelector('.cartesianlayer .plot');
+                    if (!plotArea) return;
+                    
+                    const rect = plotArea.getBoundingClientRect();
+                    const clickX = event.clientX - rect.left;
+                    
+                    // Calcular el ancho de cada barra (dividir el área total entre el número de perfiles)
+                    const totalWidth = rect.width;
+                    const barWidth = totalWidth / profiles.length;
+                    
+                    // Determinar en qué barra se hizo click
+                    const clickIndex = Math.floor(clickX / barWidth);
+                    
+                    // Verificar que el índice sea válido
+                    if (clickIndex >= 0 && clickIndex < profiles.length) {
+                        const clickedProfile = profiles[clickIndex];
+                        
+                        // Toggle selection
+                        if (selectedProfile === clickedProfile) {
+                            selectedProfile = null;
+                            const originalColors = profiles.map(name => profileColors[name] || '#6c757d');
+                            Plotly.restyle(profilesDiv, {'marker.color': [originalColors]}, [0]);
+                        } else {
+                            selectedProfile = clickedProfile;
+                            const colors = profiles.map(name => 
+                                name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
+                            );
+                            Plotly.restyle(profilesDiv, {'marker.color': [colors]}, [0]);
+                        }
+                    }
+                };
+                
+                // Guardar referencia y agregar listener
+                graphDiv._clickListener = clickListener;
+                graphDiv.addEventListener('click', clickListener);
+            }
+            
+            // Cambiar cursor a pointer en todo el área del gráfico
+            const plotArea = profilesDiv.querySelector('.cartesianlayer .plot');
+            if (plotArea) {
+                plotArea.style.cursor = 'pointer';
+            }
+            
+            // También cambiar cursor en el contenedor SVG
+            const svgContainer = profilesDiv.querySelector('.svg-container');
+            if (svgContainer) {
+                svgContainer.style.cursor = 'pointer';
+            }
+        }
         
         // Guardar la escala y centro inicial del mapa
         const initialScale = worldMapData.layout.geo?.projection?.scale || 1.0;
@@ -32,12 +118,21 @@ document.addEventListener('DOMContentLoaded', function () {
             // Renderizar el gráfico de perfiles de cliente
             return Plotly.newPlot(profilesDiv, customerProfilesData.data, customerProfilesData.layout, {
                 responsive: true,
-                displayModeBar: false
+                displayModeBar: false,
+                staticPlot: false
+            }).then(function() {
+                // Deshabilitar dragmode para evitar cursor de cruz
+                Plotly.relayout(profilesDiv, {
+                    'dragmode': false
+                });
             });
         }).then(function() {
             // Una vez que ambos gráficos se han renderizado, oculta el loader y muestra el contenido
             loader.style.display = 'none';
-            contentContainer.style.display = 'block';
+            contentContainer.style.display = 'grid';
+            
+            // Configurar eventos de clic en el gráfico de perfiles
+            setupProfileClickEvents();
             
             // Implementar zoom manual con límite para el mapa
             mapDiv.addEventListener('wheel', function(e) {
@@ -122,7 +217,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, {}, [0, 1]);
                 
                 // Volver a mostrar datos globales en el gráfico de perfiles
-                Plotly.react(profilesDiv, customerProfilesData.data, customerProfilesData.layout);
+                Plotly.react(profilesDiv, customerProfilesData.data, customerProfilesData.layout).then(function() {
+                    // Deshabilitar dragmode
+                    Plotly.relayout(profilesDiv, {
+                        'dragmode': false
+                    });
+                    // Re-configurar eventos
+                    setupProfileClickEvents();
+                    
+                    // Si había un perfil seleccionado, mantenerlo seleccionado
+                    if (selectedProfile) {
+                        const currentData = profilesDiv.data[0];
+                        if (currentData.x.includes(selectedProfile)) {
+                            const colors = currentData.x.map(name => 
+                                name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
+                            );
+                            
+                            Plotly.restyle(profilesDiv, {
+                                'marker.color': [colors]
+                            }, [0]);
+                        } else {
+                            selectedProfile = null;
+                        }
+                    }
+                });
             } else {
                 // Seleccionar el nuevo país
                 // Filtrar el país seleccionado de la lista de países con ventas
@@ -141,7 +259,33 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(response => response.json())
                     .then(data => {
                         const newGraphData = JSON.parse(data.graph);
-                        Plotly.react(profilesDiv, newGraphData.data, newGraphData.layout);
+                        Plotly.react(profilesDiv, newGraphData.data, newGraphData.layout).then(function() {
+                            // Deshabilitar dragmode para evitar cursor de cruz
+                            Plotly.relayout(profilesDiv, {
+                                'dragmode': false
+                            });
+                            // Re-configurar eventos después de actualizar el gráfico
+                            setupProfileClickEvents();
+                            
+                            // Si había un perfil seleccionado, mantenerlo seleccionado
+                            if (selectedProfile) {
+                                // Verificar si el perfil existe en los nuevos datos
+                                const currentData = profilesDiv.data[0];
+                                if (currentData.x.includes(selectedProfile)) {
+                                    // Aplicar el color de selección al perfil
+                                    const colors = currentData.x.map(name => 
+                                        name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
+                                    );
+                                    
+                                    Plotly.restyle(profilesDiv, {
+                                        'marker.color': [colors]
+                                    }, [0]);
+                                } else {
+                                    // Si el perfil no existe en los nuevos datos, deseleccionarlo
+                                    selectedProfile = null;
+                                }
+                            }
+                        });
                     })
                     .catch(error => {
                         console.error('Error al cargar perfiles por país:', error);
