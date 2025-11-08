@@ -74,6 +74,34 @@ body {
     padding: 20px;
 }
 
+/* Contenedor de gráficos lado a lado */
+.charts-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+    align-items: flex-start;
+}
+
+/* Cards individuales para cada gráfico */
+.chart-card {
+    flex: 1 1 50%;
+    max-width: 50%;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -219,4 +247,29 @@ h1 {
     font-size: 1.5rem;
     color: #6c757d;
     font-weight: 500;
+}
+
+/* Estilos para los gráficos */
+.plotly-chart {
+    width: 100% !important;
+    height: 500px !important;
+}
+
+#worldMap {
+    height: 500px !important;
+}
+
+#customerProfiles {
+    height: 500px !important;
+}
+
+/* Responsive: en pantallas pequeñas, apilar verticalmente */
+@media (max-width: 1200px) {
+    .charts-container {
+        flex-direction: column !important;
+    }
+    
+    .chart-card {
+        max-width: 100% !important;
+    }
 }

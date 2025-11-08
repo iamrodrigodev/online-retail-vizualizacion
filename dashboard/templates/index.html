@@ -32,8 +32,13 @@
         <div id="loader">
             <p>Cargando datos...</p>
         </div>
-        <div class="container" id="content-container" style="display: none;">
-            <div id="worldMap" class="plotly-chart"></div>
+        <div class="charts-container" id="content-container" style="display: none;">
+            <div class="chart-card">
+                <div id="worldMap" class="plotly-chart"></div>
+            </div>
+            <div class="chart-card">
+                <div id="customerProfiles" class="plotly-chart"></div>
+            </div>
         </div>
     </div>
 
@@ -54,7 +59,8 @@
 
     <script>
         // Pasa los datos de Django a variables de JavaScript
-        const graphData = JSON.parse('{{ graphJSON|safe }}');
+        const worldMapData = JSON.parse('{{ worldMapJSON|safe }}');
+        const customerProfilesData = JSON.parse('{{ customerProfilesJSON|safe }}');
         const countriesWithData = new Set(JSON.parse('{{ dataset_countries|safe }}'));
     </script>
     <script src="{% static 'visualizaciones/js/index.js' %}"></script>

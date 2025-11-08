@@ -5,4 +5,5 @@ from dashboard import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('api/customer-profiles/<str:country>/', views.get_customer_profiles_by_country, name='customer_profiles_by_country'),
 ]
