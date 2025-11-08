@@ -9,8 +9,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const allCountries = Array.from(countriesWithData);
 
     if (mapDiv && contentContainer && loader && typeof Plotly !== 'undefined' && typeof graphData !== 'undefined') {
-        // Guardar la escala inicial
+        // Guardar la escala y centro inicial
         const initialScale = graphData.layout.geo?.projection?.scale || 1.0;
+        const initialRotation = graphData.layout.geo?.projection?.rotation || {lon: 0, lat: 0, roll: 0};
+        const initialCenter = graphData.layout.geo?.center || {lon: 0, lat: 0};
+        
+        // Límites de latitud (arriba/abajo)
+        const maxLatOffset = 60; // Grados máximos de desplazamiento vertical
         
         Plotly.newPlot(mapDiv, graphData.data, graphData.layout, {
             responsive: true,
@@ -45,6 +50,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Aplicar el nuevo zoom
                 Plotly.relayout(mapDiv, {'geo.projection.scale': newScale});
             }, { passive: false });
+        });
+        
+        // Interceptar eventos de relayout para limitar el movimiento vertical
+        mapDiv.on('plotly_relayout', function(eventData) {
+            // Verificar si hay cambios en el centro del mapa (movimiento)
+            if (eventData['geo.center.lat'] !== undefined) {
+                const newLat = eventData['geo.center.lat'];
+                const currentScale = mapDiv.layout.geo?.projection?.scale || initialScale;
+                
+                // Solo limitar cuando estamos en escala inicial (sin zoom)
+                if (currentScale <= initialScale) {
+                    // Limitar el desplazamiento vertical
+                    if (Math.abs(newLat - initialCenter.lat) > maxLatOffset) {
+                        const limitedLat = newLat > initialCenter.lat 
+                            ? initialCenter.lat + maxLatOffset 
+                            : initialCenter.lat - maxLatOffset;
+                        
+                        Plotly.relayout(mapDiv, {'geo.center.lat': limitedLat});
+                    }
+                }
+            }
         });
 
         // Lógica para la interactividad del cursor
