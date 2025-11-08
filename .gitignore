@@ -146,12 +146,12 @@ $RECYCLE.BIN/
 .AppleDouble
 .LSOverride
 
-# Node modules (si usas frontend tools)
+# Node modules (si se usa frontend tools)
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Data files (descomenta si no quieres versionar datos)
+# Data files (descomentar si se quiere versionar datos)
 # *.csv
 # *.xlsx
 # *.json
