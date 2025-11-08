@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const graphData = JSON.parse(data.graph);
                     
                     Plotly.react(salesDiv, graphData.data, graphData.layout).then(function() {
-                        // Deshabilitar dragmode
+                        // Mantener dragmode en zoom (no deshabilitarlo)
                         Plotly.relayout(salesDiv, {
-                            'dragmode': false
+                            'dragmode': 'zoom'
                         });
                     });
                 })
@@ -176,12 +176,13 @@ document.addEventListener('DOMContentLoaded', function () {
             // Renderizar el gráfico de tendencia de ventas
             return Plotly.newPlot(salesDiv, salesTrendData.data, salesTrendData.layout, {
                 responsive: true,
-                displayModeBar: false,
+                displayModeBar: true,  // Mostrar barra de herramientas
+                modeBarButtonsToRemove: ['lasso2d', 'select2d'],  // Quitar herramientas innecesarias
                 staticPlot: false
             }).then(function() {
-                // Deshabilitar dragmode
+                // Mantener dragmode en zoom
                 Plotly.relayout(salesDiv, {
-                    'dragmode': false
+                    'dragmode': 'zoom'
                 });
             });
         }).then(function() {
