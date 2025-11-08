@@ -60,6 +60,9 @@ def get_customer_profiles_data(country=None):
         ((pl.col('count') / total_transacciones) * 100).alias('percentage')
     )
     
+    # Ordenar por porcentaje de menor a mayor
+    perfil_counts = perfil_counts.sort('percentage')
+    
     # Convertir a diccionario
     result = {
         'perfiles': perfil_counts['Perfil'].to_list(),

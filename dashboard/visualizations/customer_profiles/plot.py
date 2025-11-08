@@ -48,9 +48,9 @@ def create_customer_profiles_plot(country=None):
     
     # Determinar el título según si hay país seleccionado
     if country:
-        title_text = f'Perfiles de Cliente - {country}'
+        title_text = f'Perfiles de Cliente en {country}'
     else:
-        title_text = 'Perfiles de Cliente - Global'
+        title_text = 'Perfiles de Cliente'
     
     # Actualizar el layout
     fig.update_layout(
