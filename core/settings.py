@@ -8,14 +8,20 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='your-secret-key')
 
 DEBUG = os.environ.get('DEBUG') == 'TRUE'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+if 'RAILWAY_PUBLIC_DOMAIN' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['RAILWAY_PUBLIC_DOMAIN'])
+    ALLOWED_HOSTS.append('.' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
+
+if 'RAILWAY_STATIC_URL' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['RAILWAY_STATIC_URL'])
+    ALLOWED_HOSTS.append('.' + os.environ['RAILWAY_STATIC_URL'])
 
 CSRF_TRUSTED_ORIGINS = []
-for host in ALLOWED_HOSTS:
-    if host.startswith('.'):
-        CSRF_TRUSTED_ORIGINS.append(f"https://*{host}")
-    else:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+if 'RAILWAY_PUBLIC_DOMAIN' in os.environ:
+    CSRF_TRUSTED_ORIGINS.append('https://' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
+    CSRF_TRUSTED_ORIGINS.append('https://.' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
 
 
 INSTALLED_APPS = [
