@@ -67,7 +67,9 @@ def create_world_map_plot():
             projection_type='natural earth',
             landcolor='#f8f9fa', # Color para países no presentes en el dataset
             bgcolor='rgba(0,0,0,0)', # Fondo transparente
+            projection_scale=1.0,  # Escala base del mapa
         ),
+        dragmode='pan',  # Permitir arrastre/movimiento del mapa (izquierda/derecha, arriba/abajo)
         margin={"r":0,"t":60,"l":0,"b":0}, # Ajustar margen superior
         paper_bgcolor='rgba(0,0,0,0)', # Fondo del papel transparente
         plot_bgcolor='rgba(0,0,0,0)', # Fondo del gráfico transparente

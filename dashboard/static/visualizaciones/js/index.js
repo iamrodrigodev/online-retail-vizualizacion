@@ -9,13 +9,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const allCountries = Array.from(countriesWithData);
 
     if (mapDiv && contentContainer && loader && typeof Plotly !== 'undefined' && typeof graphData !== 'undefined') {
+        // Guardar la escala inicial
+        const initialScale = graphData.layout.geo?.projection?.scale || 1.0;
+        
         Plotly.newPlot(mapDiv, graphData.data, graphData.layout, {
             responsive: true,
-            displayModeBar: false
+            displayModeBar: false,
+            scrollZoom: false,  // Deshabilitar zoom automático de Plotly
+            doubleClick: 'reset'  // Doble click para resetear vista
         }).then(function() {
             // Una vez que el gráfico se ha renderizado, oculta el loader y muestra el contenido
             loader.style.display = 'none';
             contentContainer.style.display = 'block';
+            
+            // Implementar zoom manual con límite
+            mapDiv.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                
+                const currentScale = mapDiv.layout.geo?.projection?.scale || initialScale;
+                const zoomFactor = 0.1;
+                let newScale;
+                
+                if (e.deltaY < 0) {
+                    // Zoom in (acercar)
+                    newScale = currentScale * (1 + zoomFactor);
+                } else {
+                    // Zoom out (alejar)
+                    newScale = currentScale * (1 - zoomFactor);
+                    // No permitir escala menor a la inicial
+                    if (newScale < initialScale) {
+                        newScale = initialScale;
+                    }
+                }
+                
+                // Aplicar el nuevo zoom
+                Plotly.relayout(mapDiv, {'geo.projection.scale': newScale});
+            }, { passive: false });
         });
 
         // Lógica para la interactividad del cursor
