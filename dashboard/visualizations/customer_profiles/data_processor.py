@@ -12,15 +12,38 @@ def detectar_outliers_iqr(df, columna):
     return lower_bound, upper_bound
 
 
-def get_customer_profiles_data(country=None):
+def get_customer_profiles_data(country=None, start_date=None, end_date=None):
     """
     Obtiene los datos de perfiles de cliente.
     Si se proporciona un país, filtra por ese país.
+    Si se proporcionan fechas, filtra por rango de fechas.
     """
     df = load_online_retail_data()
     
     if df.is_empty():
         return {}
+    
+    # Asegurar que InvoiceDate sea datetime
+    df = df.with_columns([
+        pl.col('InvoiceDate').str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S").alias('InvoiceDate')
+    ])
+    
+    # Filtrar por rango de fechas si se especifica
+    if start_date:
+        start_datetime = pl.lit(start_date + "-01").str.strptime(pl.Datetime, "%Y-%m-%d")
+        df = df.filter(pl.col('InvoiceDate') >= start_datetime)
+    
+    if end_date:
+        # Calcular el último día del mes
+        import datetime
+        year, month = map(int, end_date.split('-'))
+        if month == 12:
+            next_month = datetime.datetime(year + 1, 1, 1)
+        else:
+            next_month = datetime.datetime(year, month + 1, 1)
+        last_day = next_month - datetime.timedelta(days=1)
+        end_datetime = pl.lit(last_day.strftime("%Y-%m-%d") + " 23:59:59").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+        df = df.filter(pl.col('InvoiceDate') <= end_datetime)
     
     # Crear columna Total si no existe
     if 'Total' not in df.columns:

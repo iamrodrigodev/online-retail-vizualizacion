@@ -343,3 +343,263 @@ h1 {
         max-width: 100% !important;
     }
 }
+
+/* Estilos para el filtro temporal */
+.time-filter-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+}
+
+.chart-card.time-filter-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    flex: none;
+    width: calc(90% + 12px);
+    max-width: calc(90% + 12px);
+    box-sizing: border-box;
+}
+
+.time-filter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.time-filter-title {
+    color: #0824a4;
+    font-family: 'Arial', sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 0 15px 0;
+}
+
+.time-filter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.time-filter-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px;
+}
+
+.time-filter-label {
+    font-size: 13px;
+    color: #2c3e50;
+    font-weight: 600;
+    font-family: 'Arial', sans-serif;
+}
+
+.time-slider-wrapper {
+    position: relative;
+    height: 60px;
+    margin: 10px 0;
+    --start-percent: 0%;
+    --end-percent: 0%;
+}
+
+.time-slider-wrapper::before {
+    content: '';
+    position: absolute;
+    height: 4px;
+    background: linear-gradient(to right, #e0e0e0 var(--start-percent), #0824a4 var(--start-percent), #0824a4 calc(100% - var(--end-percent)), #e0e0e0 calc(100% - var(--end-percent)));
+    border-radius: 2px;
+    top: 20px;
+    left: 0;
+    right: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Marcadores de meses */
+.time-slider-ticks {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    height: 30px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.time-slider-tick {
+    position: absolute;
+    width: 2px;
+    height: 8px;
+    background: #999;
+    margin-left: -1px;
+}
+
+.time-slider-tick.major {
+    height: 12px;
+    background: #666;
+    width: 2px;
+}
+
+.time-slider-tick-label {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #2c3e50;
+    white-space: nowrap;
+    font-family: 'Arial', sans-serif;
+    font-weight: 500;
+}
+
+.time-slider {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    pointer-events: none;
+    top: 20px;
+    padding: 0;
+    margin: 0;
+}
+
+.time-slider::-webkit-slider-track {
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    border-radius: 2px;
+}
+
+.time-slider::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    border-radius: 2px;
+}
+
+.time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #0824a4;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: -8px;
+}
+
+.time-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #0824a4;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #0824a4;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.time-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #0824a4;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.time-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.time-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.time-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+}
+
+.time-slider::-moz-range-thumb:active {
+    transform: scale(1.05);
+}
+
+#timeSliderStart {
+    z-index: 2;
+}
+
+#timeSliderEnd {
+    z-index: 1;
+}
+
+.time-filter-range {
+    text-align: center;
+    padding: 8px 0;
+    background: rgba(8, 36, 164, 0.05);
+    border-radius: 8px;
+    display: none;
+}
+
+#timeRangeDisplay {
+    font-size: 14px;
+    color: #0824a4;
+    font-weight: 600;
+    font-family: 'Arial', sans-serif;
+}
+
+@media (max-width: 768px) {
+    .time-filter-container {
+        padding: 0 15px;
+    }
+    
+    .time-filter-card {
+        padding: 15px 20px;
+    }
+    
+    .time-filter-title {
+        font-size: 18px;
+    }
+    
+    .time-filter-label {
+        font-size: 11px;
+    }
+    
+    #timeRangeDisplay {
+        font-size: 12px;
+    }
+}
+

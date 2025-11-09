@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const loader = document.getElementById('loader');
     const contentContainer = document.getElementById('content-container');
     const salesContainer = document.getElementById('sales-container');
+    const timeFilterContainer = document.getElementById('time-filter-container');
     const mapDiv = document.getElementById('worldMap');
     const profilesDiv = document.getElementById('customerProfiles');
     const salesDiv = document.getElementById('salesTrend');
@@ -11,6 +12,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedCountry = null;
     // Variable para almacenar el perfil seleccionado
     let selectedProfile = null;
+    // Variables para el filtro temporal
+    let selectedStartDate = null;
+    let selectedEndDate = null;
+    let allMonths = [];
+    
     // Array de todos los países con datos (convertir Set a Array)
     const allCountries = Array.from(countriesWithData);
     
@@ -24,11 +30,268 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectedColor = '#0824a4'; // Color La Salle para selección
 
     if (mapDiv && profilesDiv && salesDiv && productsDiv && contentContainer && salesContainer && loader && 
+        timeFilterContainer &&
         typeof Plotly !== 'undefined' && 
         typeof worldMapData !== 'undefined' && 
         typeof customerProfilesData !== 'undefined' &&
         typeof salesTrendData !== 'undefined' &&
-        typeof topProductsData !== 'undefined') {
+        typeof topProductsData !== 'undefined' &&
+        typeof dateRange !== 'undefined') {
+        
+        // Inicializar el filtro temporal
+        function initializeTimeFilter() {
+            if (!dateRange.min || !dateRange.max) {
+                console.log('No hay rango de fechas disponible');
+                return;
+            }
+            
+            // Generar array de meses entre min y max
+            const [minYear, minMonth] = dateRange.min.split('-').map(Number);
+            const [maxYear, maxMonth] = dateRange.max.split('-').map(Number);
+            
+            allMonths = [];
+            for (let year = minYear; year <= maxYear; year++) {
+                const startMonth = (year === minYear) ? minMonth : 1;
+                const endMonth = (year === maxYear) ? maxMonth : 12;
+                
+                for (let month = startMonth; month <= endMonth; month++) {
+                    const monthStr = month.toString().padStart(2, '0');
+                    allMonths.push(`${year}-${monthStr}`);
+                }
+            }
+            
+            // Configurar los sliders
+            const startSlider = document.getElementById('timeSliderStart');
+            const endSlider = document.getElementById('timeSliderEnd');
+            const startLabel = document.getElementById('startDateLabel');
+            const endLabel = document.getElementById('endDateLabel');
+            const rangeDisplay = document.getElementById('timeRangeDisplay');
+            const sliderWrapper = document.querySelector('.time-slider-wrapper');
+            const ticksContainer = document.getElementById('timeSliderTicks');
+            
+            if (!startSlider || !endSlider) return;
+            
+            startSlider.max = allMonths.length - 1;
+            endSlider.max = allMonths.length - 1;
+            startSlider.value = 0;
+            endSlider.value = allMonths.length - 1;
+            
+            // Inicializar fechas seleccionadas (rango completo)
+            selectedStartDate = null;
+            selectedEndDate = null;
+            
+            // Generar marcadores de meses
+            function generateTicks() {
+                ticksContainer.innerHTML = '';
+                const totalMonths = allMonths.length;
+                
+                if (totalMonths <= 1) return;
+                
+                // Crear marcadores cada cierto número de meses para no saturar
+                const step = Math.ceil(totalMonths / 8); // Aproximadamente 8 marcadores
+                
+                for (let i = 0; i < totalMonths; i += step) {
+                    const month = allMonths[i];
+                    const [year, monthNum] = month.split('-');
+                    
+                    const tick = document.createElement('div');
+                    tick.className = 'time-slider-tick major';
+                    
+                    // Calcular posición exacta basada en el índice
+                    const position = (i / (totalMonths - 1)) * 100;
+                    tick.style.left = `${position}%`;
+                    
+                    const label = document.createElement('span');
+                    label.className = 'time-slider-tick-label';
+                    
+                    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                                       'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                    label.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                    tick.appendChild(label);
+                    
+                    ticksContainer.appendChild(tick);
+                }
+                
+                // Agregar siempre el último mes
+                if ((totalMonths - 1) % step !== 0) {
+                    const month = allMonths[totalMonths - 1];
+                    const [year, monthNum] = month.split('-');
+                    
+                    const tick = document.createElement('div');
+                    tick.className = 'time-slider-tick major';
+                    tick.style.left = '100%';
+                    
+                    const label = document.createElement('span');
+                    label.className = 'time-slider-tick-label';
+                    
+                    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                                       'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                    label.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                    tick.appendChild(label);
+                    
+                    ticksContainer.appendChild(tick);
+                }
+            }
+            
+            generateTicks();
+            
+            // Función para actualizar la barra de progreso visual
+            function updateProgressBar() {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                const max = parseInt(startSlider.max);
+                
+                const startPercent = (startIdx / max) * 100;
+                const endPercent = (endIdx / max) * 100;
+                
+                sliderWrapper.style.setProperty('--start-percent', startPercent + '%');
+                sliderWrapper.style.setProperty('--end-percent', (100 - endPercent) + '%');
+            }
+            
+            // Función para formatear fecha para mostrar
+            function formatDateDisplay(dateStr) {
+                const [year, month] = dateStr.split('-');
+                const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                                   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                return `${monthNames[parseInt(month) - 1]} ${year}`;
+            }
+            
+            // Función para actualizar etiquetas
+            function updateLabels() {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                
+                startLabel.textContent = `Desde: ${formatDateDisplay(allMonths[startIdx])}`;
+                endLabel.textContent = `Hasta: ${formatDateDisplay(allMonths[endIdx])}`;
+                rangeDisplay.textContent = `${formatDateDisplay(allMonths[startIdx])} - ${formatDateDisplay(allMonths[endIdx])}`;
+                
+                updateProgressBar();
+            }
+            
+            // Función para actualizar gráficos con filtro temporal
+            function updateChartsWithTimeFilter() {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                
+                // Si el rango es completo, no aplicar filtro de fechas
+                if (startIdx === 0 && endIdx === allMonths.length - 1) {
+                    selectedStartDate = null;
+                    selectedEndDate = null;
+                } else {
+                    selectedStartDate = allMonths[startIdx];
+                    selectedEndDate = allMonths[endIdx];
+                }
+                
+                updateLabels();
+                
+                // Actualizar los tres gráficos que deben responder al filtro temporal
+                updateSalesTrend();
+                updateTopProducts();
+                updateCustomerProfiles();
+            }
+            
+            // Event listeners para los sliders
+            let updateTimeout;
+            
+            startSlider.addEventListener('input', function() {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                
+                // Asegurar que start no supere a end
+                if (startIdx > endIdx) {
+                    startSlider.value = endIdx;
+                }
+                
+                updateLabels();
+                
+                // Debounce para no hacer muchas peticiones
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(updateChartsWithTimeFilter, 300);
+            });
+            
+            endSlider.addEventListener('input', function() {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                
+                // Asegurar que end no sea menor que start
+                if (endIdx < startIdx) {
+                    endSlider.value = startIdx;
+                }
+                
+                updateLabels();
+                
+                // Debounce para no hacer muchas peticiones
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(updateChartsWithTimeFilter, 300);
+            });
+            
+            // Inicializar etiquetas
+            updateLabels();
+            
+            // Mostrar el contenedor del filtro
+            timeFilterContainer.style.display = 'block';
+        }
+        
+        // Función para actualizar el gráfico de perfiles de cliente
+        function updateCustomerProfiles() {
+            if (!selectedCountry) {
+                // Si no hay país seleccionado, solo aplicar filtro de fechas si existe
+                if (!selectedStartDate && !selectedEndDate) {
+                    // Rango completo, usar datos iniciales
+                    Plotly.react(profilesDiv, customerProfilesData.data, customerProfilesData.layout).then(function() {
+                        Plotly.relayout(profilesDiv, { 'dragmode': false });
+                        setupProfileClickEvents();
+                        
+                        if (selectedProfile) {
+                            const currentData = profilesDiv.data[0];
+                            if (currentData.x.includes(selectedProfile)) {
+                                const colors = currentData.x.map(name => 
+                                    name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
+                                );
+                                Plotly.restyle(profilesDiv, { 'marker.color': [colors] }, [0]);
+                            } else {
+                                selectedProfile = null;
+                            }
+                        }
+                    });
+                } else {
+                    // Aplicar filtro de fechas
+                    let url = '/api/customer-profiles-global/';
+                    const params = new URLSearchParams();
+                    
+                    if (selectedStartDate) params.append('start_date', selectedStartDate);
+                    if (selectedEndDate) params.append('end_date', selectedEndDate);
+                    
+                    if (params.toString()) url += '?' + params.toString();
+                    
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            const newGraphData = JSON.parse(data.graph);
+                            Plotly.react(profilesDiv, newGraphData.data, newGraphData.layout).then(function() {
+                                Plotly.relayout(profilesDiv, { 'dragmode': false });
+                                setupProfileClickEvents();
+                                
+                                if (selectedProfile) {
+                                    const currentData = profilesDiv.data[0];
+                                    if (currentData.x.includes(selectedProfile)) {
+                                        const colors = currentData.x.map(name => 
+                                            name === selectedProfile ? selectedColor : profileColors[name] || '#6c757d'
+                                        );
+                                        Plotly.restyle(profilesDiv, { 'marker.color': [colors] }, [0]);
+                                    } else {
+                                        selectedProfile = null;
+                                    }
+                                }
+                            });
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            } else {
+                // Ya hay lógica para país seleccionado, solo añadir filtro de fechas
+                // Esta parte se manejará en la función existente de actualización por país
+            }
+        }
         
         // Función para actualizar el gráfico de tendencia de ventas
         function updateSalesTrend() {
@@ -42,12 +305,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedProfile) {
                 params.append('profile', selectedProfile);
             }
+            if (selectedStartDate) {
+                params.append('start_date', selectedStartDate);
+            }
+            if (selectedEndDate) {
+                params.append('end_date', selectedEndDate);
+            }
             
             if (params.toString()) {
                 url += '?' + params.toString();
             }
             
-            console.log('Actualizando ventas con:', { country: selectedCountry, profile: selectedProfile, url: url });
+            console.log('Actualizando ventas con:', { 
+                country: selectedCountry, 
+                profile: selectedProfile, 
+                startDate: selectedStartDate,
+                endDate: selectedEndDate,
+                url: url 
+            });
             
             // Hacer petición al servidor
             fetch(url)
@@ -79,12 +354,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedProfile) {
                 params.append('profile', selectedProfile);
             }
+            if (selectedStartDate) {
+                params.append('start_date', selectedStartDate);
+            }
+            if (selectedEndDate) {
+                params.append('end_date', selectedEndDate);
+            }
             
             if (params.toString()) {
                 url += '?' + params.toString();
             }
             
-            console.log('Actualizando productos con:', { country: selectedCountry, profile: selectedProfile, url: url });
+            console.log('Actualizando productos con:', { 
+                country: selectedCountry, 
+                profile: selectedProfile,
+                startDate: selectedStartDate,
+                endDate: selectedEndDate,
+                url: url 
+            });
             
             // Hacer petición al servidor
             fetch(url)
@@ -238,6 +525,9 @@ document.addEventListener('DOMContentLoaded', function () {
             contentContainer.style.display = 'grid';
             salesContainer.style.display = 'block';
             
+            // Inicializar el filtro temporal
+            initializeTimeFilter();
+            
             // Configurar eventos de clic en el gráfico de perfiles
             setupProfileClickEvents();
             
@@ -348,6 +638,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
                     
+                    // Si hay filtro temporal, actualizar con él
+                    if (selectedStartDate || selectedEndDate) {
+                        updateCustomerProfiles();
+                    }
+                    
                     // Actualizar gráfico de ventas
                     updateSalesTrend();
                     // Actualizar gráfico de productos
@@ -367,7 +662,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, {}, [0, 1]);
                 
                 // Actualizar el gráfico de perfiles de cliente con datos del país seleccionado
-                fetch(`/api/customer-profiles/${encodeURIComponent(countryName)}/`)
+                let profileUrl = `/api/customer-profiles/${encodeURIComponent(countryName)}/`;
+                const profileParams = new URLSearchParams();
+                
+                if (selectedStartDate) profileParams.append('start_date', selectedStartDate);
+                if (selectedEndDate) profileParams.append('end_date', selectedEndDate);
+                
+                if (profileParams.toString()) profileUrl += '?' + profileParams.toString();
+                
+                fetch(profileUrl)
                     .then(response => response.json())
                     .then(data => {
                         const newGraphData = JSON.parse(data.graph);

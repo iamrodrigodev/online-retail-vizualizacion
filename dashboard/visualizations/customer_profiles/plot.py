@@ -2,12 +2,13 @@ import plotly.graph_objects as go
 from dashboard.visualizations.customer_profiles.data_processor import get_customer_profiles_data
 
 
-def create_customer_profiles_plot(country=None):
+def create_customer_profiles_plot(country=None, start_date=None, end_date=None):
     """
     Crea una figura de Plotly con un gráfico de barras de perfiles de cliente.
     Si se proporciona un país, muestra datos específicos de ese país.
+    Si se proporcionan fechas, filtra por rango de fechas.
     """
-    data = get_customer_profiles_data(country)
+    data = get_customer_profiles_data(country, start_date, end_date)
     
     if not data:
         # Retorna una figura vacía si no hay datos

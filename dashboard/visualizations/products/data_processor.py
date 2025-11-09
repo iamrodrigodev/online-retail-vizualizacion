@@ -15,18 +15,20 @@ def detectar_outliers_iqr(df, columna):
     return lower_bound, upper_bound
 
 
-def get_top_products_data(country=None, customer_profile=None):
+def get_top_products_data(country=None, customer_profile=None, start_date=None, end_date=None):
     """
     Obtiene los datos del Top 5 de productos más vendidos.
     
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
+        start_date: Fecha de inicio en formato YYYY-MM (opcional)
+        end_date: Fecha de fin en formato YYYY-MM (opcional)
     
     Returns:
         dict con datos de productos más vendidos
     """
-    print(f"DEBUG - get_top_products_data: country={country}, profile={customer_profile}")
+    print(f"DEBUG - get_top_products_data: country={country}, profile={customer_profile}, dates={start_date} to {end_date}")
     
     df = load_online_retail_data()
     
@@ -35,6 +37,30 @@ def get_top_products_data(country=None, customer_profile=None):
         return None
     
     print(f"DEBUG - DataFrame inicial: {df.height} filas")
+    
+    # Asegurar que InvoiceDate sea datetime
+    df = df.with_columns([
+        pl.col('InvoiceDate').str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S").alias('InvoiceDate')
+    ])
+    
+    # Filtrar por rango de fechas si se especifica
+    if start_date:
+        start_datetime = pl.lit(start_date + "-01").str.strptime(pl.Datetime, "%Y-%m-%d")
+        df = df.filter(pl.col('InvoiceDate') >= start_datetime)
+        print(f"DEBUG - Después de filtrar por fecha inicio {start_date}: {df.height} filas")
+    
+    if end_date:
+        # Calcular el último día del mes
+        import datetime
+        year, month = map(int, end_date.split('-'))
+        if month == 12:
+            next_month = datetime.datetime(year + 1, 1, 1)
+        else:
+            next_month = datetime.datetime(year, month + 1, 1)
+        last_day = next_month - datetime.timedelta(days=1)
+        end_datetime = pl.lit(last_day.strftime("%Y-%m-%d") + " 23:59:59").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+        df = df.filter(pl.col('InvoiceDate') <= end_datetime)
+        print(f"DEBUG - Después de filtrar por fecha fin {end_date}: {df.height} filas")
     
     # Filtrar por país si se especifica
     if country:

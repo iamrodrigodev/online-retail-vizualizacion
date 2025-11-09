@@ -15,13 +15,15 @@ def detectar_outliers_iqr(df, columna):
     return lower_bound, upper_bound
 
 
-def get_sales_trend_data(country=None, customer_profile=None):
+def get_sales_trend_data(country=None, customer_profile=None, start_date=None, end_date=None):
     """
     Obtiene los datos de tendencia de ventas diarias.
     
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
+        start_date: Fecha de inicio en formato YYYY-MM (opcional)
+        end_date: Fecha de fin en formato YYYY-MM (opcional)
     
     Returns:
         dict con datos de ventas por fecha y año
@@ -30,6 +32,28 @@ def get_sales_trend_data(country=None, customer_profile=None):
     
     if df is None or df.height == 0:
         return None
+    
+    # Asegurar que InvoiceDate sea datetime
+    df = df.with_columns([
+        pl.col('InvoiceDate').str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S").alias('InvoiceDate')
+    ])
+    
+    # Filtrar por rango de fechas si se especifica
+    if start_date:
+        start_datetime = pl.lit(start_date + "-01").str.strptime(pl.Datetime, "%Y-%m-%d")
+        df = df.filter(pl.col('InvoiceDate') >= start_datetime)
+    
+    if end_date:
+        # Calcular el último día del mes
+        import datetime
+        year, month = map(int, end_date.split('-'))
+        if month == 12:
+            next_month = datetime.datetime(year + 1, 1, 1)
+        else:
+            next_month = datetime.datetime(year, month + 1, 1)
+        last_day = next_month - datetime.timedelta(days=1)
+        end_datetime = pl.lit(last_day.strftime("%Y-%m-%d") + " 23:59:59").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+        df = df.filter(pl.col('InvoiceDate') <= end_datetime)
     
     # Filtrar por país si se especifica
     if country:
@@ -61,11 +85,6 @@ def get_sales_trend_data(country=None, customer_profile=None):
         
         # Filtrar por el perfil especificado
         df = df.filter(pl.col('Perfil') == customer_profile)
-    
-    # Asegurar que InvoiceDate sea datetime
-    df = df.with_columns([
-        pl.col('InvoiceDate').str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S").alias('InvoiceDate')
-    ])
     
     # Calcular Sales si no existe
     if 'Sales' not in df.columns:

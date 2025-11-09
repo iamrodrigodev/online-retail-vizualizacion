@@ -5,20 +5,22 @@ import plotly.graph_objects as go
 from dashboard.visualizations.products.data_processor import get_top_products_data
 
 
-def create_top_products_plot(country=None, customer_profile=None):
+def create_top_products_plot(country=None, customer_profile=None, start_date=None, end_date=None):
     """
     Crea una figura de Plotly con el Top 5 de productos más vendidos.
     
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
+        start_date: Fecha de inicio en formato YYYY-MM (opcional)
+        end_date: Fecha de fin en formato YYYY-MM (opcional)
     
     Returns:
         Figura de Plotly
     """
-    print(f"DEBUG - create_top_products_plot: country={country}, profile={customer_profile}")
+    print(f"DEBUG - create_top_products_plot: country={country}, profile={customer_profile}, dates={start_date} to {end_date}")
     
-    data = get_top_products_data(country, customer_profile)
+    data = get_top_products_data(country, customer_profile, start_date, end_date)
     
     print(f"DEBUG - data received: {data}")
     

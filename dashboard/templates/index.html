@@ -51,6 +51,41 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Filtro Temporal Global -->
+        <div class="time-filter-container" id="time-filter-container" style="display: none;">
+            <div class="chart-card time-filter-card">
+                <h3 class="time-filter-title">Filtro Temporal</h3>
+                <div class="time-filter-content">
+                    <div class="time-filter-labels">
+                        <span class="time-filter-label" id="startDateLabel"></span>
+                        <span class="time-filter-label" id="endDateLabel"></span>
+                    </div>
+                    <div class="time-slider-wrapper">
+                        <div class="time-slider-ticks" id="timeSliderTicks"></div>
+                        <input 
+                            type="range" 
+                            id="timeSliderStart" 
+                            class="time-slider" 
+                            min="0" 
+                            max="100" 
+                            value="0"
+                        >
+                        <input 
+                            type="range" 
+                            id="timeSliderEnd" 
+                            class="time-slider" 
+                            min="0" 
+                            max="100" 
+                            value="100"
+                        >
+                    </div>
+                    <div class="time-filter-range">
+                        <span id="timeRangeDisplay"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -75,6 +110,7 @@
         const salesTrendData = JSON.parse('{{ salesTrendJSON|safe }}');
         const topProductsData = JSON.parse('{{ topProductsJSON|safe }}');
         const countriesWithData = new Set(JSON.parse('{{ dataset_countries|safe }}'));
+        const dateRange = JSON.parse('{{ date_range|safe }}');
     </script>
     <script src="{% static 'visualizaciones/js/index.js' %}"></script>
 </body>

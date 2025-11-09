@@ -5,18 +5,20 @@ import plotly.graph_objects as go
 from dashboard.visualizations.sales.data_processor import get_sales_trend_data
 
 
-def create_sales_trend_plot(country=None, customer_profile=None):
+def create_sales_trend_plot(country=None, customer_profile=None, start_date=None, end_date=None):
     """
     Crea una figura de Plotly con la tendencia de ventas diarias.
     
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
+        start_date: Fecha de inicio en formato YYYY-MM (opcional)
+        end_date: Fecha de fin en formato YYYY-MM (opcional)
     
     Returns:
         Figura de Plotly
     """
-    data = get_sales_trend_data(country, customer_profile)
+    data = get_sales_trend_data(country, customer_profile, start_date, end_date)
     
     if not data:
         return go.Figure()
