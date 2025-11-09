@@ -378,6 +378,15 @@ h1 {
     font-size: 20px;
     font-weight: normal;
     text-align: center;
+    margin: 0 0 5px 0;
+}
+
+.time-filter-description {
+    color: #000000;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    text-align: center;
     margin: 0 0 15px 0;
 }
 
@@ -405,8 +414,10 @@ h1 {
     position: relative;
     height: 60px;
     margin: 10px 0;
+    padding: 0 10px;
     --start-percent: 0%;
     --end-percent: 0%;
+    cursor: pointer;
 }
 
 .time-slider-wrapper::before {
@@ -416,8 +427,8 @@ h1 {
     background: linear-gradient(to right, #e0e0e0 var(--start-percent), #0824a4 var(--start-percent), #0824a4 calc(100% - var(--end-percent)), #e0e0e0 calc(100% - var(--end-percent)));
     border-radius: 2px;
     top: 20px;
-    left: 0;
-    right: 0;
+    left: 10px;
+    right: 10px;
     z-index: 0;
     pointer-events: none;
 }
@@ -426,8 +437,8 @@ h1 {
 .time-slider-ticks {
     position: absolute;
     top: 20px;
-    left: 0;
-    right: 0;
+    left: 10px;
+    right: 10px;
     height: 30px;
     pointer-events: none;
     z-index: 0;
@@ -439,6 +450,16 @@ h1 {
     flex-direction: column;
     align-items: center;
     transform: translateX(-50%);
+}
+
+.time-slider-tick-container:first-child {
+    transform: translateX(0);
+    align-items: flex-start;
+}
+
+.time-slider-tick-container:last-child {
+    transform: translateX(-100%);
+    align-items: flex-end;
 }
 
 .time-slider-tick {
@@ -473,7 +494,7 @@ h1 {
 
 .time-slider {
     position: absolute;
-    width: 100%;
+    width: calc(100% - 20px);
     height: 4px;
     -webkit-appearance: none;
     appearance: none;
@@ -481,8 +502,10 @@ h1 {
     outline: none;
     pointer-events: none;
     top: 20px;
+    left: 10px;
     padding: 0;
     margin: 0;
+    z-index: 3;
 }
 
 .time-slider::-webkit-slider-track {
@@ -511,7 +534,8 @@ h1 {
     border: 3px solid white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    margin-top: -8px;
+    margin-top: -6px;
+    position: relative;
 }
 
 .time-slider::-moz-range-thumb {
@@ -524,6 +548,8 @@ h1 {
     border: 3px solid white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: -4px;
+    position: relative;
 }
 
 .time-slider::-webkit-slider-thumb {
@@ -571,11 +597,11 @@ h1 {
 }
 
 #timeSliderStart {
-    z-index: 2;
+    z-index: 4;
 }
 
 #timeSliderEnd {
-    z-index: 1;
+    z-index: 3;
 }
 
 .time-filter-range {

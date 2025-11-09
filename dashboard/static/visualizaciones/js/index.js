@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const startLabel = document.getElementById('startDateLabel');
             const endLabel = document.getElementById('endDateLabel');
             const rangeDisplay = document.getElementById('timeRangeDisplay');
+            const descriptionText = document.getElementById('timeFilterDescription');
             const sliderWrapper = document.querySelector('.time-slider-wrapper');
             const ticksContainer = document.getElementById('timeSliderTicks');
             
@@ -101,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Calcular posición exacta basada en el índice
                     const position = (i / (totalMonths - 1)) * 100;
                     tickContainer.style.left = `${position}%`;
+                    
+                    // No necesitamos ajustar el transform, el CSS ya los centra con translateX(-50%)
                     
                     const tick = document.createElement('div');
                     
@@ -146,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Función para formatear fecha para mostrar
             function formatDateDisplay(dateStr) {
                 const [year, month] = dateStr.split('-');
-                const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                                   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
                 return `${monthNames[parseInt(month) - 1]} ${year}`;
             }
             
@@ -159,6 +162,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 startLabel.textContent = `Desde: ${formatDateDisplay(allMonths[startIdx])}`;
                 endLabel.textContent = `Hasta: ${formatDateDisplay(allMonths[endIdx])}`;
                 rangeDisplay.textContent = `${formatDateDisplay(allMonths[startIdx])} - ${formatDateDisplay(allMonths[endIdx])}`;
+                
+                // Actualizar el texto descriptivo con "hasta" en negritas
+                if (descriptionText) {
+                    const [startYear, startMonth] = allMonths[startIdx].split('-');
+                    const [endYear, endMonth] = allMonths[endIdx].split('-');
+                    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    
+                    const startMonthName = monthNames[parseInt(startMonth) - 1];
+                    const endMonthName = monthNames[parseInt(endMonth) - 1];
+                    
+                    descriptionText.innerHTML = `Desde ${startMonthName} del ${startYear} <strong>hasta</strong> ${endMonthName} del ${endYear}`;
+                }
                 
                 updateProgressBar();
             }
@@ -218,6 +234,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Debounce para no hacer muchas peticiones
                 clearTimeout(updateTimeout);
                 updateTimeout = setTimeout(updateChartsWithTimeFilter, 300);
+            });
+            
+            // Hacer el slider clickeable
+            sliderWrapper.addEventListener('click', function(event) {
+                // Obtener las dimensiones del wrapper
+                const rect = sliderWrapper.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                
+                // Calcular el porcentaje de la posición del click (considerando el padding de 10px)
+                const padding = 10;
+                const availableWidth = rect.width - (padding * 2);
+                const adjustedClickX = clickX - padding;
+                
+                // Asegurar que el click esté dentro del área válida
+                if (adjustedClickX < 0 || adjustedClickX > availableWidth) return;
+                
+                const percentage = adjustedClickX / availableWidth;
+                const clickedIndex = Math.round(percentage * (allMonths.length - 1));
+                
+                // Determinar cuál slider mover (el más cercano al click)
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                const startPos = (startIdx / (allMonths.length - 1)) * availableWidth + padding;
+                const endPos = (endIdx / (allMonths.length - 1)) * availableWidth + padding;
+                
+                const distanceToStart = Math.abs(clickX - startPos);
+                const distanceToEnd = Math.abs(clickX - endPos);
+                
+                if (distanceToStart < distanceToEnd) {
+                    // Mover el slider de inicio
+                    if (clickedIndex <= endIdx) {
+                        startSlider.value = clickedIndex;
+                    }
+                } else {
+                    // Mover el slider de fin
+                    if (clickedIndex >= startIdx) {
+                        endSlider.value = clickedIndex;
+                    }
+                }
+                
+                updateLabels();
+                updateChartsWithTimeFilter();
             });
             
             // Inicializar etiquetas
