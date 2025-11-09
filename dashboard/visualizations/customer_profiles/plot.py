@@ -38,7 +38,7 @@ def create_customer_profiles_plot(country=None):
             x=perfiles,
             y=percentages_display,  # Usar valores ajustados para visualización
             text=[f'{pct:.1f}%' for pct in percentages],  # Texto con valor real
-            textposition='outside',
+            textposition='auto',
             marker=dict(
                 color=colors,
                 line=dict(color='white', width=2)
@@ -65,7 +65,7 @@ def create_customer_profiles_plot(country=None):
             'x': 0.5,
             'xanchor': 'center',
             'font': {
-                'size': 24,
+                'size': 20,
                 'color': '#0824a4',
                 'family': 'Arial, sans-serif'
             }
@@ -73,38 +73,44 @@ def create_customer_profiles_plot(country=None):
         xaxis={
             'title': {
                 'text': 'Perfil de Cliente',
-                'font': {'size': 14, 'color': '#2c3e50'}
+                'font': {'size': 14, 'color': '#2c3e50'},
+                'standoff': 0
             },
-            'tickfont': {'size': 12, 'color': '#2c3e50'}
+            'tickfont': {'size': 12, 'color': '#2c3e50'},
+            'fixedrange': True
         },
         yaxis={
             'title': {
                 'text': 'Porcentaje (%)',
-                'font': {'size': 14, 'color': '#2c3e50'}
+                'font': {'size': 12, 'color': '#2c3e50'}
             },
-            'tickfont': {'size': 12, 'color': '#2c3e50'},
-            'range': [0, max(percentages_display) * 1.15]  # Espacio para los labels
+            'tickfont': {'size': 11, 'color': '#2c3e50'},
+            'range': [0, max(percentages_display) * 1.15],  # Espacio para los labels
+            'fixedrange': True
         },
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin={"r": 20, "t": 100, "l": 60, "b": 100},
+    # Ajustar márgenes: espacio inferior para colocar la leyenda centrada debajo
+    margin={"r": 20, "t": 110, "l": 50, "b": 110},
+        autosize=True,
         showlegend=True,
         dragmode=False,
         hovermode='closest',
-        xaxis_fixedrange=True,
-        yaxis_fixedrange=True,
+        # Colocar la leyenda fuera del área de trazado, abajo
+        # Colocar la leyenda horizontal y centrada debajo del gráfico
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=-0.3,
+            yanchor="top",
+            y=-0.25,
             xanchor="center",
             x=0.5,
-            bgcolor="rgba(255,255,255,0.9)",
+            bgcolor="rgba(255,255,255,0.95)",
             bordercolor="#cccccc",
             borderwidth=1,
-            font=dict(size=10, color='#2c3e50'),
+            font=dict(size=9, color='#2c3e50'),
             itemclick=False,
-            itemdoubleclick=False
+            itemdoubleclick=False,
+            itemsizing='constant'
         ),
         annotations=[
             dict(
@@ -112,12 +118,12 @@ def create_customer_profiles_plot(country=None):
                 xref='paper',
                 yref='paper',
                 x=0.5,
-                y=0.98,
+                y=1.08,
                 xanchor='center',
-                yanchor='top',
+                yanchor='bottom',
                 showarrow=False,
                 font=dict(
-                    size=12,
+                    size=11,
                     color='#000000',
                     family='Arial, sans-serif'
                 )

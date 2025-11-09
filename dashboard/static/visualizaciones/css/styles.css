@@ -78,8 +78,8 @@ body {
 .charts-container {
     display: flex !important;
     flex-direction: row !important;
-    gap: 20px;
-    max-width: 1600px;
+    gap: 12px; /* reducir gap para ganar espacio */
+    max-width: 1400px;
     margin: 0 auto;
     width: 100%;
     align-items: flex-start;
@@ -94,12 +94,13 @@ body {
 
 /* Cards individuales para cada gráfico */
 .chart-card {
-    flex: 1 1 50%;
-    max-width: 50%;
+    /* Reducir ancho relativo para que los dos charts sean un poco más pequeños */
+    flex: 0 0 45%;
+    max-width: 45%;
     background: white;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    padding: 12px; /* reducir padding para ganar altura útil */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-sizing: border-box;
 }
@@ -264,19 +265,19 @@ h1 {
 /* Estilos para los gráficos */
 .plotly-chart {
     width: 100% !important;
-    height: 500px !important;
+    height: 360px !important; /* altura base reducida */
 }
 
 #worldMap {
-    height: 500px !important;
+    height: 380px !important;
 }
 
 #customerProfiles {
-    height: 500px !important;
+    height: 380px !important;
 }
 
 #salesTrend {
-    height: 400px !important;
+    height: 320px !important; /* tendencia un poco más alta */
 }
 
 /* Forzar cursor pointer en las barras del gráfico de perfiles */
@@ -293,6 +294,30 @@ h1 {
 #customerProfiles .text-and-icon text,
 #customerProfiles g.barlayer text {
     cursor: pointer !important;
+}
+
+/* Bloquear interacción con la leyenda del gráfico de perfiles */
+#customerProfiles .legend,
+#customerProfiles .scrollbox,
+#customerProfiles g.legend,
+#customerProfiles g.traces,
+#customerProfiles .legendtoggle,
+#customerProfiles .legend .traces .legendpoints,
+#customerProfiles .legend .traces {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
+/* Bloquear interacción con la leyenda del gráfico del mapa mundial */
+#worldMap .legend,
+#worldMap .scrollbox,
+#worldMap g.legend,
+#worldMap g.traces,
+#worldMap .legendtoggle,
+#worldMap .legend .traces .legendpoints,
+#worldMap .legend .traces {
+    pointer-events: none !important;
+    cursor: default !important;
 }
 
 /* Responsive: en pantallas pequeñas, apilar verticalmente */
