@@ -32,11 +32,13 @@ def create_sales_trend_plot(country=None, customer_profile=None):
     # Variables para calcular el rango del eje Y
     all_sales = []
     total_points = 0
+    total_sales_amount = 0  # Total acumulado de ventas
     
     # Agregar una traza por cada año
     for i, year in enumerate(years):
         year_data = data_by_year[year]
         all_sales.extend(year_data['sales'])
+        total_sales_amount += sum(year_data['sales'])  # Sumar ventas de este año
         total_points += len(year_data['sales'])
         
         # Si hay pocos datos, mostrar puntos además de líneas
@@ -138,10 +140,27 @@ def create_sales_trend_plot(country=None, customer_profile=None):
             bordercolor='#cccccc'
         ),
         showlegend=False,  # Ocultar la leyenda de años
-        margin={"r": 20, "t": 100, "l": 60, "b": 80},
+        margin={"r": 20, "t": 110, "l": 60, "b": 80},
         dragmode='zoom',  # Permitir zoom con selección
         xaxis_fixedrange=False,  # Permitir zoom en X
-        yaxis_fixedrange=False   # Permitir zoom en Y
+        yaxis_fixedrange=False,   # Permitir zoom en Y
+        annotations=[
+            dict(
+                text=f'Total de ventas: £{total_sales_amount:,.2f}',
+                xref='paper',
+                yref='paper',
+                x=0.5,
+                y=1.08,
+                xanchor='center',
+                yanchor='bottom',
+                showarrow=False,
+                font=dict(
+                    size=11,
+                    color='#000000',
+                    family='Arial, sans-serif'
+                )
+            )
+        ]
     )
     
     return fig
