@@ -5,6 +5,7 @@ import plotly.utils
 from .visualizations.world_map.plot import create_world_map_plot
 from .visualizations.customer_profiles.plot import create_customer_profiles_plot
 from .visualizations.sales.plot import create_sales_trend_plot
+from .visualizations.products.plot import create_top_products_plot
 
 def index(request):
     # 1. Crear el mapa mundial desde nuestra nueva función de visualización
@@ -16,16 +17,21 @@ def index(request):
     # 3. Crear el gráfico de tendencia de ventas (global inicialmente)
     sales_trend_fig = create_sales_trend_plot()
 
-    # 4. Convertir las figuras de Plotly a strings JSON para el frontend
+    # 4. Crear el gráfico de top productos (global inicialmente)
+    top_products_fig = create_top_products_plot()
+
+    # 5. Convertir las figuras de Plotly a strings JSON para el frontend
     world_map_json = json.dumps(world_map_fig, cls=plotly.utils.PlotlyJSONEncoder)
     customer_profiles_json = json.dumps(customer_profiles_fig, cls=plotly.utils.PlotlyJSONEncoder)
     sales_trend_json = json.dumps(sales_trend_fig, cls=plotly.utils.PlotlyJSONEncoder)
+    top_products_json = json.dumps(top_products_fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-    # 5. Pasar los JSONs al contexto de la plantilla
+    # 6. Pasar los JSONs al contexto de la plantilla
     context = {
         'worldMapJSON': world_map_json,
         'customerProfilesJSON': customer_profiles_json,
         'salesTrendJSON': sales_trend_json,
+        'topProductsJSON': top_products_json,
         'dataset_countries': json.dumps(dataset_countries)
     }
 
@@ -65,6 +71,28 @@ def get_sales_trend(request):
     
     return JsonResponse({
         'graph': sales_trend_json,
+        'country': country,
+        'profile': customer_profile
+    })
+
+
+def get_top_products(request):
+    """
+    API endpoint para obtener top 5 productos con filtros opcionales
+    """
+    country = request.GET.get('country', None)
+    customer_profile = request.GET.get('profile', None)
+    
+    print(f"DEBUG - get_top_products: country={country}, profile={customer_profile}")
+    
+    # Crear el gráfico con los filtros aplicados
+    top_products_fig = create_top_products_plot(country=country, customer_profile=customer_profile)
+    
+    # Convertir a JSON
+    top_products_json = json.dumps(top_products_fig, cls=plotly.utils.PlotlyJSONEncoder)
+    
+    return JsonResponse({
+        'graph': top_products_json,
         'country': country,
         'profile': customer_profile
     })

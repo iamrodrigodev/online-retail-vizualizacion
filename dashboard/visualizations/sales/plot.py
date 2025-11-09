@@ -105,7 +105,7 @@ def create_sales_trend_plot(country=None, customer_profile=None):
             'x': 0.5,
             'xanchor': 'center',
             'font': {
-                'size': 24,
+                'size': 18,
                 'color': '#0824a4',
                 'family': 'Arial, sans-serif'
             }
@@ -113,20 +113,20 @@ def create_sales_trend_plot(country=None, customer_profile=None):
         xaxis={
             'title': {
                 'text': 'Fecha',
-                'font': {'size': 14, 'color': '#2c3e50'}
+                'font': {'size': 11, 'color': '#2c3e50'}
             },
             'showgrid': True,
             'gridcolor': 'lightgray',
-            'tickfont': {'size': 12, 'color': '#2c3e50'}
+            'tickfont': {'size': 9, 'color': '#2c3e50'}
         },
         yaxis={
             'title': {
                 'text': 'Ventas (£)',
-                'font': {'size': 14, 'color': '#2c3e50'}
+                'font': {'size': 11, 'color': '#2c3e50'}
             },
             'showgrid': True,
             'gridcolor': 'lightgray',
-            'tickfont': {'size': 12, 'color': '#2c3e50'},
+            'tickfont': {'size': 9, 'color': '#2c3e50'},
             'range': [y_min, y_max],  # Rango dinámico basado en los datos
             'autorange': False
         },
@@ -140,7 +140,7 @@ def create_sales_trend_plot(country=None, customer_profile=None):
             bordercolor='#cccccc'
         ),
         showlegend=False,  # Ocultar la leyenda de años
-        margin={"r": 20, "t": 110, "l": 60, "b": 80},
+        margin={"r": 5, "t": 95, "l": 40, "b": 50},
         dragmode='zoom',  # Permitir zoom con selección
         xaxis_fixedrange=False,  # Permitir zoom en X
         yaxis_fixedrange=False,   # Permitir zoom en Y
@@ -150,7 +150,7 @@ def create_sales_trend_plot(country=None, customer_profile=None):
                 xref='paper',
                 yref='paper',
                 x=0.5,
-                y=1.08,
+                y=1.05,
                 xanchor='center',
                 yanchor='bottom',
                 showarrow=False,

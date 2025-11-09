@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mapDiv = document.getElementById('worldMap');
     const profilesDiv = document.getElementById('customerProfiles');
     const salesDiv = document.getElementById('salesTrend');
+    const productsDiv = document.getElementById('topProducts');
     
     // Variable para almacenar el país seleccionado
     let selectedCountry = null;
@@ -22,11 +23,12 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     const selectedColor = '#0824a4'; // Color La Salle para selección
 
-    if (mapDiv && profilesDiv && salesDiv && contentContainer && salesContainer && loader && 
+    if (mapDiv && profilesDiv && salesDiv && productsDiv && contentContainer && salesContainer && loader && 
         typeof Plotly !== 'undefined' && 
         typeof worldMapData !== 'undefined' && 
         typeof customerProfilesData !== 'undefined' &&
-        typeof salesTrendData !== 'undefined') {
+        typeof salesTrendData !== 'undefined' &&
+        typeof topProductsData !== 'undefined') {
         
         // Función para actualizar el gráfico de tendencia de ventas
         function updateSalesTrend() {
@@ -62,6 +64,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(error => {
                     console.error('Error al cargar tendencia de ventas:', error);
+                });
+        }
+        
+        // Función para actualizar el gráfico de top productos
+        function updateTopProducts() {
+            // Construir URL con parámetros
+            let url = '/api/top-products/';
+            const params = new URLSearchParams();
+            
+            if (selectedCountry) {
+                params.append('country', selectedCountry);
+            }
+            if (selectedProfile) {
+                params.append('profile', selectedProfile);
+            }
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            console.log('Actualizando productos con:', { country: selectedCountry, profile: selectedProfile, url: url });
+            
+            // Hacer petición al servidor
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const graphData = JSON.parse(data.graph);
+                    
+                    Plotly.react(productsDiv, graphData.data, graphData.layout, {
+                        responsive: true,
+                        displayModeBar: false,
+                        staticPlot: true
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar top productos:', error);
                 });
         }
         
@@ -113,8 +151,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             const originalColors = profiles.map(name => profileColors[name] || '#6c757d');
                             Plotly.restyle(profilesDiv, {'marker.color': [originalColors]}, [0]);
                             
-                            // Actualizar gráfico de ventas
+                            // Actualizar gráficos de ventas y productos
                             updateSalesTrend();
+                            updateTopProducts();
                         } else {
                             selectedProfile = clickedProfile;
                             const colors = profiles.map(name => 
@@ -122,8 +161,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             );
                             Plotly.restyle(profilesDiv, {'marker.color': [colors]}, [0]);
                             
-                            // Actualizar gráfico de ventas
+                            // Actualizar gráficos de ventas y productos
                             updateSalesTrend();
+                            updateTopProducts();
                         }
                     }
                 };
@@ -184,6 +224,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 Plotly.relayout(salesDiv, {
                     'dragmode': 'zoom'
                 });
+            });
+        }).then(function() {
+            // Renderizar el gráfico de top productos
+            return Plotly.newPlot(productsDiv, topProductsData.data, topProductsData.layout, {
+                responsive: true,
+                displayModeBar: false,
+                staticPlot: true
             });
         }).then(function() {
             // Una vez que todos los gráficos se han renderizado, oculta el loader y muestra el contenido
@@ -303,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     // Actualizar gráfico de ventas
                     updateSalesTrend();
+                    // Actualizar gráfico de productos
+                    updateTopProducts();
                 });
             } else {
                 // Seleccionar el nuevo país
@@ -351,6 +400,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             
                             // Actualizar gráfico de ventas
                             updateSalesTrend();
+                            // Actualizar gráfico de productos
+                            updateTopProducts();
                         });
                     })
                     .catch(error => {

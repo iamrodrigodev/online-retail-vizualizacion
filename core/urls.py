@@ -7,4 +7,5 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('api/customer-profiles/<str:country>/', views.get_customer_profiles_by_country, name='customer_profiles_by_country'),
     path('api/sales-trend/', views.get_sales_trend, name='sales_trend'),
+    path('api/top-products/', views.get_top_products, name='top_products'),
 ]
