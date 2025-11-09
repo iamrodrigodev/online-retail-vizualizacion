@@ -163,6 +163,13 @@ document.addEventListener('DOMContentLoaded', function () {
             function generateRangeText(graphType) {
                 const startIdx = parseInt(startSlider.value);
                 const endIdx = parseInt(endSlider.value);
+                const max = parseInt(startSlider.max);
+                
+                // Si el rango está en el máximo (todos los datos), no mostrar texto
+                if (startIdx === 0 && endIdx === max) {
+                    return '';
+                }
+                
                 const [startYear, startMonth] = allMonths[startIdx].split('-');
                 const [endYear, endMonth] = allMonths[endIdx].split('-');
                 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
