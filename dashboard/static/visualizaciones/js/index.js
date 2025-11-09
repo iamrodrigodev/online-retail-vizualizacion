@@ -70,6 +70,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const sliderWrapper = document.querySelector('.time-slider-wrapper');
             const ticksContainer = document.getElementById('timeSliderTicks');
             
+            // Referencias a los textos de rango de fechas de cada gráfico
+            const customerProfilesDateRange = document.getElementById('customerProfilesDateRange');
+            const salesTrendDateRange = document.getElementById('salesTrendDateRange');
+            const topProductsDateRange = document.getElementById('topProductsDateRange');
+            
             if (!startSlider || !endSlider) return;
             
             startSlider.max = allMonths.length - 1;
@@ -154,6 +159,40 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `${monthNames[parseInt(month) - 1]} ${year}`;
             }
             
+            // Función para generar el texto de rango con contexto
+            function generateRangeText(graphType) {
+                const startIdx = parseInt(startSlider.value);
+                const endIdx = parseInt(endSlider.value);
+                const [startYear, startMonth] = allMonths[startIdx].split('-');
+                const [endYear, endMonth] = allMonths[endIdx].split('-');
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                
+                const startMonthName = monthNames[parseInt(startMonth) - 1];
+                const endMonthName = monthNames[parseInt(endMonth) - 1];
+                
+                let prefix = '';
+                if (graphType === 'sales') {
+                    prefix = 'Ventas';
+                } else if (graphType === 'products') {
+                    prefix = 'Productos';
+                } else if (graphType === 'profiles') {
+                    prefix = 'Perfiles de Cliente';
+                }
+                
+                // Agregar información de país si está seleccionado
+                if (selectedCountry) {
+                    prefix += ` en ${selectedCountry}`;
+                }
+                
+                // Agregar información de perfil si está seleccionado
+                if (selectedProfile && (graphType === 'sales' || graphType === 'products')) {
+                    prefix += ` con perfil ${selectedProfile}`;
+                }
+                
+                return `${prefix} desde ${startMonthName} del ${startYear} <strong>hasta</strong> ${endMonthName} del ${endYear}`;
+            }
+            
             // Función para actualizar etiquetas
             function updateLabels() {
                 const startIdx = parseInt(startSlider.value);
@@ -174,6 +213,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     const endMonthName = monthNames[parseInt(endMonth) - 1];
                     
                     descriptionText.innerHTML = `Desde ${startMonthName} del ${startYear} <strong>hasta</strong> ${endMonthName} del ${endYear}`;
+                }
+                
+                // Actualizar los textos de rango de fecha de cada gráfico
+                if (customerProfilesDateRange) {
+                    customerProfilesDateRange.innerHTML = generateRangeText('profiles');
+                }
+                if (salesTrendDateRange) {
+                    salesTrendDateRange.innerHTML = generateRangeText('sales');
+                }
+                if (topProductsDateRange) {
+                    topProductsDateRange.innerHTML = generateRangeText('products');
                 }
                 
                 updateProgressBar();
@@ -306,6 +356,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 selectedProfile = null;
                             }
                         }
+                        
+                        // Actualizar el texto de rango de fecha
+                        if (customerProfilesDateRange) {
+                            customerProfilesDateRange.innerHTML = generateRangeText('profiles');
+                        }
                     });
                 } else {
                     // Aplicar filtro de fechas
@@ -335,6 +390,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     } else {
                                         selectedProfile = null;
                                     }
+                                }
+                                
+                                // Actualizar el texto de rango de fecha
+                                if (customerProfilesDateRange) {
+                                    customerProfilesDateRange.innerHTML = generateRangeText('profiles');
                                 }
                             });
                         })
@@ -388,6 +448,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         Plotly.relayout(salesDiv, {
                             'dragmode': 'zoom'
                         });
+                        
+                        // Actualizar el texto de rango de fecha
+                        if (salesTrendDateRange) {
+                            salesTrendDateRange.innerHTML = generateRangeText('sales');
+                        }
                     });
                 })
                 .catch(error => {
@@ -436,6 +501,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         responsive: true,
                         displayModeBar: false,
                         staticPlot: true
+                    }).then(function() {
+                        // Actualizar el texto de rango de fecha
+                        if (topProductsDateRange) {
+                            topProductsDateRange.innerHTML = generateRangeText('products');
+                        }
                     });
                 })
                 .catch(error => {
