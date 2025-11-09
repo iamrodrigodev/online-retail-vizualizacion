@@ -376,7 +376,7 @@ h1 {
     color: #0824a4;
     font-family: 'Arial', sans-serif;
     font-size: 20px;
-    font-weight: bold;
+    font-weight: normal;
     text-align: center;
     margin: 0 0 15px 0;
 }
@@ -397,7 +397,7 @@ h1 {
 .time-filter-label {
     font-size: 13px;
     color: #2c3e50;
-    font-weight: 600;
+    font-weight: normal;
     font-family: 'Arial', sans-serif;
 }
 
@@ -425,7 +425,7 @@ h1 {
 /* Marcadores de meses */
 .time-slider-ticks {
     position: absolute;
-    top: 24px;
+    top: 20px;
     left: 0;
     right: 0;
     height: 30px;
@@ -433,25 +433,37 @@ h1 {
     z-index: 0;
 }
 
-.time-slider-tick {
+.time-slider-tick-container {
     position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(-50%);
+}
+
+.time-slider-tick {
     width: 2px;
     height: 8px;
     background: #999;
-    margin-left: -1px;
+    transform: translateY(-2px);
+}
+
+.time-slider-tick.minor {
+    height: 6px;
+    background: #ccc;
+    width: 1px;
+    transform: translateY(-1px);
 }
 
 .time-slider-tick.major {
     height: 12px;
     background: #666;
     width: 2px;
+    transform: translateY(-4px);
 }
 
 .time-slider-tick-label {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin-top: 14px;
     font-size: 10px;
     color: #2c3e50;
     white-space: nowrap;

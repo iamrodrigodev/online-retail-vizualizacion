@@ -87,49 +87,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 if (totalMonths <= 1) return;
                 
-                // Crear marcadores cada cierto número de meses para no saturar
-                const step = Math.ceil(totalMonths / 8); // Aproximadamente 8 marcadores
+                // Paso para las etiquetas (solo mostrar algunas)
+                const labelStep = Math.ceil(totalMonths / 8);
                 
-                for (let i = 0; i < totalMonths; i += step) {
+                // Generar un tick para cada mes
+                for (let i = 0; i < totalMonths; i++) {
                     const month = allMonths[i];
                     const [year, monthNum] = month.split('-');
                     
-                    const tick = document.createElement('div');
-                    tick.className = 'time-slider-tick major';
+                    const tickContainer = document.createElement('div');
+                    tickContainer.className = 'time-slider-tick-container';
                     
                     // Calcular posición exacta basada en el índice
                     const position = (i / (totalMonths - 1)) * 100;
-                    tick.style.left = `${position}%`;
-                    
-                    const label = document.createElement('span');
-                    label.className = 'time-slider-tick-label';
-                    
-                    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                                       'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                    label.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
-                    tick.appendChild(label);
-                    
-                    ticksContainer.appendChild(tick);
-                }
-                
-                // Agregar siempre el último mes
-                if ((totalMonths - 1) % step !== 0) {
-                    const month = allMonths[totalMonths - 1];
-                    const [year, monthNum] = month.split('-');
+                    tickContainer.style.left = `${position}%`;
                     
                     const tick = document.createElement('div');
-                    tick.className = 'time-slider-tick major';
-                    tick.style.left = '100%';
                     
-                    const label = document.createElement('span');
-                    label.className = 'time-slider-tick-label';
+                    // Determinar si debe mostrar etiqueta (cada labelStep meses o si es el último)
+                    const shouldShowLabel = (i % labelStep === 0) || (i === totalMonths - 1);
                     
-                    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                                       'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                    label.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
-                    tick.appendChild(label);
+                    if (shouldShowLabel) {
+                        tick.className = 'time-slider-tick major';
+                        
+                        const label = document.createElement('span');
+                        label.className = 'time-slider-tick-label';
+                        
+                        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                                           'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                        label.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                        
+                        tickContainer.appendChild(tick);
+                        tickContainer.appendChild(label);
+                    } else {
+                        tick.className = 'time-slider-tick minor';
+                        tickContainer.appendChild(tick);
+                    }
                     
-                    ticksContainer.appendChild(tick);
+                    ticksContainer.appendChild(tickContainer);
                 }
             }
             
