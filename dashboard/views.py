@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 import plotly.utils
 from .visualizations.world_map.plot import create_world_map_plot
@@ -15,6 +16,7 @@ from .visualizations.client_similarity.data_processor import (
 from .visualizations.client_similarity.plot import create_client_similarity_plot
 import polars as pl
 
+@ensure_csrf_cookie
 def index(request):
     # 1. Crear el mapa mundial desde nuestra nueva función de visualización
     world_map_fig, dataset_countries = create_world_map_plot()
@@ -173,9 +175,13 @@ def compute_client_similarity(request):
     """
     API endpoint para calcular el gráfico de similitud de clientes
     """
+    import sys
     try:
+        print("=== INICIO compute_client_similarity ===", file=sys.stderr)
+        
         # Parsear datos JSON del body
         data = json.loads(request.body)
+        print(f"Datos recibidos: {data}", file=sys.stderr)
         
         # Extraer parámetros
         customer_id = data.get('customer_id', None)
@@ -188,6 +194,8 @@ def compute_client_similarity(request):
         country = data.get('country', None)
         start_date = data.get('start_date', None)
         end_date = data.get('end_date', None)
+        
+        print(f"Filtros: country={country}, start_date={start_date}, end_date={end_date}", file=sys.stderr)
         
         # Convertir a enteros si están presentes
         if x_axis is not None:
@@ -208,6 +216,8 @@ def compute_client_similarity(request):
         if dimred not in ['pca']:
             return JsonResponse({'error': 'Solo PCA está soportado'}, status=400)
         
+        print("Iniciando cálculo...", file=sys.stderr)
+        
         # Calcular el gráfico
         result = compute_client_similarity_graph(
             customer_id=customer_id,
@@ -222,6 +232,8 @@ def compute_client_similarity(request):
             end_date=end_date
         )
         
+        print(f"Cálculo completado. Total clientes: {result.get('total_customers', 0)}", file=sys.stderr)
+        
         # Verificar si hay datos en el resultado
         if not result or not result.get('embedding'):
             return JsonResponse({
@@ -234,15 +246,17 @@ def compute_client_similarity(request):
                 }
             }, status=404)
         
+        print("=== FIN compute_client_similarity (éxito) ===", file=sys.stderr)
         return JsonResponse(result)
     
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        print(f"ERROR JSON: {e}", file=sys.stderr)
         return JsonResponse({'error': 'JSON inválido'}, status=400)
     except Exception as e:
-        print(f"Error en compute_client_similarity: {e}")
+        print(f"ERROR en compute_client_similarity: {type(e).__name__}: {e}", file=sys.stderr)
         import traceback
-        traceback.print_exc()
-        return JsonResponse({'error': str(e)}, status=500)
+        traceback.print_exc(file=sys.stderr)
+        return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
 
 
 def get_customer_ids(request):

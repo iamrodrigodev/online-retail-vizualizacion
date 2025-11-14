@@ -1057,11 +1057,24 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => {
             if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.error || 'Error en la respuesta del servidor');
+                // Intentar parsear como JSON primero
+                return response.text().then(text => {
+                    try {
+                        const err = JSON.parse(text);
+                        throw new Error(err.error || 'Error en el servidor');
+                    } catch {
+                        // Si no es JSON, es probablemente HTML de error
+                        throw new Error(`Error del servidor (${response.status}): El servidor está teniendo problemas. Intenta recargar la página.`);
+                    }
                 });
             }
-            return response.json();
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Respuesta inválida del servidor. Recarga la página.');
+                }
+            });
         })
         .then(data => {
             if (data.error) {

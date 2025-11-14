@@ -21,7 +21,11 @@ if 'RAILWAY_STATIC_URL' in os.environ:
 CSRF_TRUSTED_ORIGINS = []
 if 'RAILWAY_PUBLIC_DOMAIN' in os.environ:
     CSRF_TRUSTED_ORIGINS.append('https://' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
-    CSRF_TRUSTED_ORIGINS.append('https://.' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
+    # Configuración para producción (Railway)
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = False  # Permite que JavaScript acceda a la cookie CSRF
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
 
 INSTALLED_APPS = [
