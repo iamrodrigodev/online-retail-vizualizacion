@@ -222,6 +222,18 @@ def compute_client_similarity(request):
             end_date=end_date
         )
         
+        # Verificar si hay datos en el resultado
+        if not result or not result.get('embedding'):
+            return JsonResponse({
+                'error': 'No hay datos disponibles para los filtros seleccionados',
+                'details': {
+                    'country': country,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'customer_id': customer_id
+                }
+            }, status=404)
+        
         return JsonResponse(result)
     
     except json.JSONDecodeError:

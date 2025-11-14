@@ -1055,10 +1055,26 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify(requestData)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'Error en la respuesta del servidor');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 alert('Error: ' + data.error);
+                applyButton.disabled = false;
+                applyButton.textContent = 'APLICAR';
+                return;
+            }
+            
+            if (!data.embedding || data.embedding.length === 0) {
+                alert('No hay datos disponibles para los filtros seleccionados');
+                applyButton.disabled = false;
+                applyButton.textContent = 'APLICAR';
                 return;
             }
             
@@ -1081,8 +1097,7 @@ document.addEventListener('DOMContentLoaded', function () {
             applyButton.textContent = 'APLICAR';
         })
         .catch(error => {
-            console.error('Error al calcular similitud:', error);
-            alert('Error al calcular similitud de clientes');
+            alert('Error: ' + error.message);
             applyButton.disabled = false;
             applyButton.textContent = 'APLICAR';
         });
