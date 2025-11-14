@@ -862,36 +862,55 @@ document.addEventListener('DOMContentLoaded', function () {
     const metric = document.getElementById('metric');
     const dimred = document.getElementById('dimred');
     const applyButton = document.getElementById('applyButton');
+    const resetButton = document.getElementById('resetButton');
     const similarityInfo = document.getElementById('similarityInfo');
     const totalCustomersSpan = document.getElementById('totalCustomers');
     
     let currentSimilarityData = null;
+    let customerIdsCache = null; // Cache para IDs de clientes
+    let isLoadingCustomerIds = false; // Estado de carga
+    let similarityGraphCache = {}; // Cache para diferentes configuraciones del gráfico
     
-    // Función para cargar los IDs de clientes
+    // Valores iniciales por defecto
+    const defaultSimilaritySettings = {
+        customerId: null,
+        k: 10,
+        normalization: 'zscore',
+        metric: 'euclidean',
+        dimred: 'pca',
+        xAxisFeature: '',
+        yAxisFeature: ''
+    };
+    
+    // Función para cargar los IDs de clientes con cache
     function loadCustomerIds() {
+        // Si ya están en cache, usarlos directamente
+        if (customerIdsCache) {
+            populateCustomerSelect(customerIdsCache);
+            similarityContainer.style.display = 'block';
+            updateSimilarityGraph();
+            return;
+        }
+        
+        // Si ya está cargando, no hacer otra petición
+        if (isLoadingCustomerIds) {
+            return;
+        }
+        
+        isLoadingCustomerIds = true;
+        
+        // NO tocar el selector mientras carga para evitar que se ponga gris
+        // Solo actualizarlo cuando tengamos los datos
+        
         fetch('/api/client-similarity/customer-ids/')
             .then(response => response.json())
             .then(data => {
                 if (data.customer_ids && data.customer_ids.length > 0) {
-                    // Guardar el valor actual antes de limpiar
-                    const currentValue = customerSelect.value;
+                    // Guardar en cache
+                    customerIdsCache = data.customer_ids;
                     
-                    // Limpiar el select
-                    customerSelect.innerHTML = '<option value="">Todos los clientes</option>';
-                    
-                    // Agregar opciones sin decimales
-                    data.customer_ids.forEach(id => {
-                        const option = document.createElement('option');
-                        const cleanId = parseInt(id); // Eliminar decimales
-                        option.value = cleanId;
-                        option.textContent = `Cliente ${cleanId}`;
-                        customerSelect.appendChild(option);
-                    });
-                    
-                    // Restaurar el valor anterior si existía
-                    if (currentValue) {
-                        customerSelect.value = currentValue;
-                    }
+                    // Poblar el selector
+                    populateCustomerSelect(customerIdsCache);
                     
                     // Mostrar el contenedor
                     similarityContainer.style.display = 'block';
@@ -902,7 +921,34 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => {
                 console.error('Error al cargar IDs de clientes:', error);
+                customerSelect.innerHTML = '<option value="">Error al cargar clientes</option>';
+            })
+            .finally(() => {
+                isLoadingCustomerIds = false;
             });
+    }
+    
+    // Función auxiliar para poblar el selector con los IDs
+    function populateCustomerSelect(customerIds, preserveSelection = true) {
+        // Guardar el valor actual antes de limpiar
+        const currentValue = preserveSelection ? customerSelect.value : '';
+        
+        // Limpiar y agregar opción por defecto
+        customerSelect.innerHTML = '<option value="">Todos los clientes</option>';
+        
+        // Agregar opciones sin decimales
+        customerIds.forEach(id => {
+            const option = document.createElement('option');
+            const cleanId = parseInt(id);
+            option.value = cleanId;
+            option.textContent = `Cliente ${cleanId}`;
+            customerSelect.appendChild(option);
+        });
+        
+        // Restaurar el valor anterior si existía y preserveSelection es true
+        if (currentValue && preserveSelection) {
+            customerSelect.value = currentValue;
+        }
     }
     
     // Función para actualizar el gráfico de similitud
@@ -918,6 +964,16 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validación
         if (k < 1 || k > 500) {
             alert('K debe estar entre 1 y 500');
+            return;
+        }
+        
+        // Crear clave de caché
+        const cacheKey = `${customerId || 'all'}_${k}_${norm}_${met}_${dim}_${xAxisFeature}_${yAxisFeature}`;
+        
+        // Verificar si ya existe en caché
+        if (similarityGraphCache[cacheKey]) {
+            console.log('Usando datos del caché para:', cacheKey);
+            renderSimilarityGraph(similarityGraphCache[cacheKey], customerId);
             return;
         }
         
@@ -958,6 +1014,10 @@ document.addEventListener('DOMContentLoaded', function () {
             
             currentSimilarityData = data;
             
+            // Guardar en caché
+            similarityGraphCache[cacheKey] = data;
+            console.log('Datos guardados en caché:', cacheKey);
+            
             // Actualizar información
             if (data.total_customers) {
                 totalCustomersSpan.textContent = data.total_customers;
@@ -981,10 +1041,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Función para renderizar el gráfico
     function renderSimilarityGraph(data, selectedCustomerId) {
+        console.log('Renderizando gráfico con cliente seleccionado:', selectedCustomerId);
+        
         if (!data.embedding || data.embedding.length === 0) {
             similarityGraph.innerHTML = '<p style="text-align: center; padding: 50px;">No hay datos disponibles</p>';
             return;
         }
+        
+        // Convertir selectedCustomerId a string para comparación consistente
+        const selectedIdStr = selectedCustomerId ? String(selectedCustomerId) : null;
         
         // Separar datos por CLUSTER (grupos de comportamiento RFM)
         const clusterGroups = {};
@@ -1025,8 +1090,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         `<b>Productos únicos:</b> ${point.unique_products}<br>` +
                         `<b>País:</b> ${point.country}`;
             
-            const isSelected = selectedCustomerId && point.id === selectedCustomerId;
-            const isNeighbor = data.neighbors && data.neighbors.some(n => n.id === point.id);
+            // Convertir point.id a string para comparación consistente
+            const pointIdStr = String(point.id);
+            const isSelected = selectedIdStr && pointIdStr === selectedIdStr;
+            const isNeighbor = data.neighbors && data.neighbors.some(n => String(n.id) === pointIdStr);
+            
+            if (isSelected) {
+                console.log('Cliente seleccionado encontrado:', pointIdStr);
+            }
             
             let category;
             if (isSelected) {
@@ -1109,7 +1180,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     text: clusterData.normal.text,
                     hovertemplate: '%{text}<extra></extra>',
-                    customdata: clusterData.normal.ids
+                    customdata: clusterData.normal.ids.map(id => [id]),
+                    hoverlabel: { bgcolor: color },
+                    hoverinfo: 'text'
                 });
             }
             
@@ -1128,7 +1201,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     text: clusterData.outlier.text,
                     hovertemplate: '%{text}<extra></extra>',
-                    customdata: clusterData.outlier.ids
+                    customdata: clusterData.outlier.ids.map(id => [id]),
+                    hoverlabel: { bgcolor: color },
+                    hoverinfo: 'text'
                 });
             }
             
@@ -1147,7 +1222,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     text: clusterData.neighbor.text,
                     hovertemplate: '%{text}<extra></extra>',
-                    customdata: clusterData.neighbor.ids
+                    customdata: clusterData.neighbor.ids.map(id => [id]),
+                    hoverlabel: { bgcolor: color },
+                    hoverinfo: 'text'
                 });
             }
             
@@ -1166,7 +1243,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     text: clusterData.selected.text,
                     hovertemplate: '%{text}<extra></extra>',
-                    customdata: clusterData.selected.ids
+                    customdata: clusterData.selected.ids.map(id => [id]),
+                    hoverlabel: { bgcolor: 'red' },
+                    hoverinfo: 'text'
                 });
             }
         });
@@ -1174,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Configurar títulos de ejes
         let xaxisTitle = 'Dimensión 1';
         let yaxisTitle = 'Dimensión 2';
-        let titleText = 'Gráfico de Similitud de Clientes';
+        let titleText = 'Gráfico de Similitud de Clientes - Análisis RFM';
         
         // Verificar si se usan ejes personalizados
         if (data.axis_info && data.axis_info.use_pca === false) {
@@ -1183,12 +1262,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const yName = data.axis_info.y_axis_name || 'Eje Y';
             xaxisTitle = xName;
             yaxisTitle = yName;
-            titleText = `Gráfico de Similitud de Clientes (Análisis RFM: ${xName} vs ${yName})`;
+            titleText = `Gráfico de Similitud de Clientes - Análisis RFM: ${xName} vs ${yName}`;
         } else if (data.pca_variance) {
             // Usar PCA con información de varianza
             const pc1Var = data.pca_variance.pc1_variance.toFixed(1);
             const pc2Var = data.pca_variance.pc2_variance.toFixed(1);
-            const totalVar = data.pca_variance.total_variance.toFixed(1);
             const pc1Features = data.pca_variance.pc1_features || [];
             const pc2Features = data.pca_variance.pc2_features || [];
             
@@ -1205,7 +1283,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 yaxisTitle = `Dimensión 2 (${pc2Var}%)`;
             }
             
-            titleText = `Gráfico de Similitud de Clientes (Análisis RFM - ${totalVar}% información)`;
+            // Mostrar el total de clientes en lugar del porcentaje de varianza
+            const totalCustomers = data.total_customers || data.embedding.length;
+            titleText = `Gráfico de Similitud de Clientes - Análisis RFM (${totalCustomers.toLocaleString('es-ES')} clientes)`;
         }
         
         // Layout del gráfico (con zoom habilitado como el mapa mundial)
@@ -1256,16 +1336,74 @@ document.addEventListener('DOMContentLoaded', function () {
             displayModeBar: true,
             modeBarButtonsToRemove: ['lasso2d', 'select2d'],
             scrollZoom: true  // Habilitar zoom con scroll del mouse
+        }).then(() => {
+            // Forzar cursor pointer en todo el gráfico
+            similarityGraph.style.cursor = 'pointer';
+            
+            // Agregar cursor pointer a todos los puntos después de renderizar
+            const svgLayer = similarityGraph.querySelector('.svg-container');
+            if (svgLayer) {
+                svgLayer.style.cursor = 'pointer';
+            }
+            
+            // Forzar cursor en la capa de scatter
+            const scatterLayers = similarityGraph.querySelectorAll('.scatterlayer');
+            scatterLayers.forEach(layer => {
+                layer.style.cursor = 'pointer';
+            });
         });
         
-        // Agregar evento de clic en puntos
+        // Agregar evento de clic en puntos para seleccionar cliente
         similarityGraph.on('plotly_click', function(eventData) {
+            console.log('Click detectado en gráfico:', eventData);
             const point = eventData.points[0];
+            console.log('Punto clickeado:', point);
+            console.log('Customdata:', point.customdata);
+            
             if (point.customdata && point.customdata.length > 0) {
                 const clickedId = point.customdata[0];
-                customerSelect.value = clickedId;
+                console.log('ID del cliente clickeado:', clickedId);
+                
+                // Si el cliente clickeado ya está seleccionado, deseleccionarlo
+                if (customerSelect.value === String(clickedId)) {
+                    console.log('Deseleccionando cliente:', clickedId);
+                    customerSelect.value = '';
+                    
+                    // Deshabilitar K cuando se deselecciona
+                    if (kNeighbors) {
+                        kNeighbors.disabled = true;
+                        kNeighbors.value = 10;
+                        kNeighbors.style.backgroundColor = '#e0e0e0';
+                        kNeighbors.style.cursor = 'not-allowed';
+                    }
+                } else {
+                    // Seleccionar nuevo cliente
+                    console.log('Seleccionando cliente:', clickedId);
+                    customerSelect.value = clickedId;
+                    
+                    // Habilitar K si estaba deshabilitado
+                    if (kNeighbors && kNeighbors.disabled) {
+                        kNeighbors.disabled = false;
+                        kNeighbors.style.backgroundColor = '';
+                        kNeighbors.style.cursor = '';
+                    }
+                }
+                
+                // Actualizar el gráfico
                 updateSimilarityGraph();
+            } else {
+                console.log('No se encontró customdata en el punto');
             }
+        });
+        
+        // Agregar evento hover para cambiar cursor a pointer
+        similarityGraph.on('plotly_hover', function(eventData) {
+            similarityGraph.style.cursor = 'pointer';
+        });
+        
+        // Restaurar cursor cuando no hay hover
+        similarityGraph.on('plotly_unhover', function(eventData) {
+            similarityGraph.style.cursor = 'pointer';
         });
     }
     
@@ -1288,6 +1426,34 @@ document.addEventListener('DOMContentLoaded', function () {
     // Event listeners
     if (applyButton) {
         applyButton.addEventListener('click', updateSimilarityGraph);
+    }
+    
+    // Función para reiniciar todo a valores por defecto
+    function resetSimilarityGraph() {
+        // Resetear controles a valores por defecto
+        customerSelect.value = defaultSimilaritySettings.customerId || '';
+        kNeighbors.value = defaultSimilaritySettings.k;
+        normalization.value = defaultSimilaritySettings.normalization;
+        metric.value = defaultSimilaritySettings.metric;
+        dimred.value = defaultSimilaritySettings.dimred;
+        document.getElementById('xAxisFeature').value = defaultSimilaritySettings.xAxisFeature;
+        document.getElementById('yAxisFeature').value = defaultSimilaritySettings.yAxisFeature;
+        
+        // Deshabilitar K
+        kNeighbors.disabled = true;
+        kNeighbors.style.backgroundColor = '#e0e0e0';
+        kNeighbors.style.cursor = 'not-allowed';
+        
+        // Limpiar caché para forzar recarga
+        similarityGraphCache = {};
+        
+        // Actualizar gráfico
+        updateSimilarityGraph();
+    }
+    
+    // Event listener para botón de reiniciar
+    if (resetButton) {
+        resetButton.addEventListener('click', resetSimilarityGraph);
     }
     
     // Event listener para bloquear/desbloquear K según cliente seleccionado

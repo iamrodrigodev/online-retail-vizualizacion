@@ -119,18 +119,18 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                 ))
     
     # Crear set de vecinos para resaltarlos
-    neighbor_ids = set()
+    neighbor_ids_set = set()
     if neighbors_data:
-        neighbor_ids = {str(n['id']) for n in neighbors_data}
+        neighbor_ids_set = {str(n['id']) for n in neighbors_data}
     
     # Agregar puntos por CLUSTER (grupos visuales claros)
     # con colores según tipo predominante (consistencia con Customer Profiles)
     for cluster_id, cluster_data in clusters.items():
         # Separar puntos normales, outliers, vecinos y seleccionado
-        normal_x, normal_y, normal_text = [], [], []
-        outlier_x, outlier_y, outlier_text = [], [], []
-        selected_x, selected_y, selected_text = [], [], []
-        neighbor_x, neighbor_y, neighbor_text = [], [], []
+        normal_x, normal_y, normal_text, normal_ids = [], [], [], []
+        outlier_x, outlier_y, outlier_text, outlier_ids = [], [], [], []
+        selected_x, selected_y, selected_text, selected_ids = [], [], [], []
+        neighbor_x, neighbor_y, neighbor_text, neighbor_point_ids = [], [], [], []
         
         for i in range(len(cluster_data['x'])):
             x, y = cluster_data['x'][i], cluster_data['y'][i]
@@ -142,21 +142,25 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                 selected_x.append(x)
                 selected_y.append(y)
                 selected_text.append(text)
+                selected_ids.append(point_id)
             # Vecinos del cliente seleccionado
-            elif point_id in neighbor_ids:
+            elif point_id in neighbor_ids_set:
                 neighbor_x.append(x)
                 neighbor_y.append(y)
                 neighbor_text.append(text)
+                neighbor_point_ids.append(point_id)
             # Outliers
             elif cluster_data['outliers'][i]:
                 outlier_x.append(x)
                 outlier_y.append(y)
                 outlier_text.append(text)
+                outlier_ids.append(point_id)
             # Puntos normales
             else:
                 normal_x.append(x)
                 normal_y.append(y)
                 normal_text.append(text)
+                normal_ids.append(point_id)
         
         # Nombre descriptivo y color según el ID del cluster
         cluster_name = cluster_names.get(cluster_id, f'Cluster {cluster_id}')
@@ -176,10 +180,7 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                 ),
                 text=normal_text,
                 hovertemplate='%{text}<extra></extra>',
-                customdata=[cluster_data['ids'][i] for i in range(len(cluster_data['ids']))
-                           if not cluster_data['outliers'][i] and 
-                           str(cluster_data['ids'][i]) not in neighbor_ids and
-                           (not selected_customer_id or str(cluster_data['ids'][i]) != str(selected_customer_id))]
+                customdata=[[id] for id in normal_ids]
             ))
         
         # Outliers
@@ -195,7 +196,8 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                     line=dict(width=1, color='black')
                 ),
                 text=outlier_text,
-                hovertemplate='%{text}<extra></extra>'
+                hovertemplate='%{text}<extra></extra>',
+                customdata=[[id] for id in outlier_ids]
             ))
         
         # Vecinos resaltados
@@ -211,7 +213,8 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                     line=dict(width=2, color='yellow')
                 ),
                 text=neighbor_text,
-                hovertemplate='%{text}<extra></extra>'
+                hovertemplate='%{text}<extra></extra>',
+                customdata=[[id] for id in neighbor_point_ids]
             ))
         
         # Cliente seleccionado
@@ -227,7 +230,8 @@ def create_client_similarity_plot(embedding_data, neighbors_data=None, edges_dat
                     line=dict(width=2, color='darkred')
                 ),
                 text=selected_text,
-                hovertemplate='%{text}<extra></extra>'
+                hovertemplate='%{text}<extra></extra>',
+                customdata=[[id] for id in selected_ids]
             ))
     
     # Configurar títulos de ejes

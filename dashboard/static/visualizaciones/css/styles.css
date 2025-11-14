@@ -703,18 +703,44 @@ h1 {
     border: 2px solid #cbd5e0;
     border-radius: 8px;
     font-size: 14px;
-    background: white;
+    background: white !important;
     transition: all 0.3s ease;
     outline: none;
+    color: #2c3e50 !important;
+}
+
+/* Evitar que se ponga gris en cualquier estado */
+.form-control:disabled,
+.form-control:disabled:hover,
+.form-control:disabled:focus,
+.form-control:disabled:active {
+    background: white !important;
+    color: #2c3e50 !important;
+    cursor: wait;
+    opacity: 1 !important;
+    border-color: #cbd5e0 !important;
+}
+
+.form-control option:disabled {
+    color: #a0aec0;
+    font-style: italic;
 }
 
 .form-control:focus {
     border-color: var(--color-lasalle);
     box-shadow: 0 0 0 3px rgba(8, 36, 164, 0.1);
+    background: white !important;
+    color: #2c3e50 !important;
 }
 
-.form-control:hover {
+.form-control:hover:not(:disabled) {
     border-color: #a0aec0;
+    background: white !important;
+}
+
+.form-control:active {
+    background: white !important;
+    color: #2c3e50 !important;
 }
 
 input[type="number"].form-control {
@@ -758,6 +784,37 @@ input[type="number"].form-control::-webkit-inner-spin-button {
     cursor: not-allowed;
 }
 
+.btn-reset {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-reset:hover:not(:disabled) {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+    box-shadow: 0 6px 16px rgba(108, 117, 125, 0.35);
+    transform: translateY(-2px);
+}
+
+.btn-reset:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+}
+
+.btn-reset:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .similarity-info {
     margin-top: 15px;
     padding: 12px;
@@ -778,6 +835,53 @@ input[type="number"].form-control::-webkit-inner-spin-button {
 
 #client_similarity_graph {
     min-height: 700px;
+    cursor: pointer !important;
+}
+
+/* Forzar cursor pointer en TODO el gráfico de similitud */
+#client_similarity_graph,
+#client_similarity_graph *,
+#client_similarity_graph .svg-container,
+#client_similarity_graph .svg-container *,
+#client_similarity_graph .plot-container,
+#client_similarity_graph .plotly,
+#client_similarity_graph svg,
+#client_similarity_graph .scatterlayer,
+#client_similarity_graph .scatterlayer *,
+#client_similarity_graph .trace,
+#client_similarity_graph .trace *,
+#client_similarity_graph .points,
+#client_similarity_graph .points *,
+#client_similarity_graph path,
+#client_similarity_graph circle {
+    cursor: pointer !important;
+}
+
+/* Asegurar que el selector de clientes tenga espacio para abrirse hacia abajo */
+#customerSelect {
+    position: relative;
+    z-index: 1;
+    background: white !important;
+    color: #2c3e50 !important;
+}
+
+#customerSelect:focus,
+#customerSelect:active,
+#customerSelect:hover,
+#customerSelect:disabled {
+    background: white !important;
+    color: #2c3e50 !important;
+    opacity: 1 !important;
+}
+
+#customerSelect option {
+    background: white !important;
+    color: #2c3e50 !important;
+}
+
+.control-group:has(#customerSelect) {
+    position: relative;
+    z-index: auto;
 }
 
 /* Responsive para controles de similitud */
