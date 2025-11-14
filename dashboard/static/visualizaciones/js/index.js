@@ -1019,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Verificar si ya existe en caché
         if (similarityGraphCache[cacheKey]) {
-            renderSimilarityGraph(similarityGraphCache[cacheKey], customerId);
+            renderSimilarityGraph(similarityGraphCache[cacheKey], customerId, met, norm);
             updateClientSimilarityDateRange();
             return;
         }
@@ -1074,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             // Renderizar el gráfico
-            renderSimilarityGraph(data, customerId);
+            renderSimilarityGraph(data, customerId, met, norm);
             
             // Restaurar botón
             applyButton.disabled = false;
@@ -1089,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // Función para renderizar el gráfico
-    function renderSimilarityGraph(data, selectedCustomerId) {
+    function renderSimilarityGraph(data, selectedCustomerId, metricUsed, normalizationUsed) {
         if (!data.embedding || data.embedding.length === 0) {
             similarityGraph.innerHTML = '<p style="text-align: center; padding: 50px;">No hay datos disponibles</p>';
             return;
@@ -1329,10 +1329,38 @@ document.addEventListener('DOMContentLoaded', function () {
         // Título dinámico basado en filtros (país y fechas)
         const totalCustomers = data.total_customers || data.embedding.length;
         
+        // Mapeo de nombres de métricas para mostrar en español
+        const metricNames = {
+            'euclidean': 'Euclidiana',
+            'pearson': 'Pearson',
+            'cosine': 'Coseno'
+        };
+        const metricDisplayName = metricNames[metricUsed] || metricUsed;
+        
+        // Mapeo de nombres de normalización
+        const normalizationNames = {
+            'zscore': 'Z-Score',
+            'minmax_01': 'Min-Max [0,1]'
+        };
+        const normalizationDisplayName = normalizationNames[normalizationUsed] || normalizationUsed;
+        
         if (selectedCountry) {
             titleText = `${selectedCountry} (${totalCustomers.toLocaleString('es-ES')} clientes)`;
         } else {
             titleText = `Todos los países (${totalCustomers.toLocaleString('es-ES')} clientes)`;
+        }
+        
+        // Agregar métrica y normalización al título si no son las predeterminadas
+        const infoItems = [];
+        if (metricUsed && metricUsed !== 'euclidean') {
+            infoItems.push(`Métrica: ${metricDisplayName}`);
+        }
+        if (normalizationUsed && normalizationUsed !== 'zscore') {
+            infoItems.push(`Normalización: ${normalizationDisplayName}`);
+        }
+        
+        if (infoItems.length > 0) {
+            titleText += ` - ${infoItems.join(' | ')}`;
         }
         
         // Layout del gráfico (con zoom habilitado como el mapa mundial)
