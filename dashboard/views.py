@@ -185,6 +185,9 @@ def compute_client_similarity(request):
         dimred = data.get('dimred', 'pca')
         x_axis = data.get('x_axis', None)
         y_axis = data.get('y_axis', None)
+        country = data.get('country', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
         
         # Convertir a enteros si están presentes
         if x_axis is not None:
@@ -213,7 +216,10 @@ def compute_client_similarity(request):
             normalization=normalization,
             dimred=dimred,
             x_axis=x_axis,
-            y_axis=y_axis
+            y_axis=y_axis,
+            country=country,
+            start_date=start_date,
+            end_date=end_date
         )
         
         return JsonResponse(result)
@@ -232,7 +238,16 @@ def get_customer_ids(request):
     API endpoint para obtener todos los IDs de clientes disponibles
     """
     try:
-        customer_ids = get_all_customer_ids()
+        # Obtener filtros opcionales
+        country = request.GET.get('country', None)
+        start_date = request.GET.get('start_date', None)
+        end_date = request.GET.get('end_date', None)
+        
+        customer_ids = get_all_customer_ids(
+            country=country,
+            start_date=start_date,
+            end_date=end_date
+        )
         return JsonResponse({
             'customer_ids': customer_ids,
             'total': len(customer_ids)

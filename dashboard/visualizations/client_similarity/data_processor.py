@@ -12,10 +12,15 @@ from .dimensionality import apply_dimensionality_reduction
 from .clustering import apply_kmeans_clustering, detect_outliers_statistical
 
 
-def prepare_customer_features():
+def prepare_customer_features(country=None, start_date=None, end_date=None):
     """
     Prepara las características de clientes desde el dataset
     Calcula métricas RFM (Recency, Frequency, Monetary) y otras características
+    
+    Args:
+        country: País para filtrar (opcional)
+        start_date: Fecha de inicio del período (formato 'YYYY-MM', opcional)
+        end_date: Fecha de fin del período (formato 'YYYY-MM', opcional)
     
     Returns:
         tuple: (customer_ids, feature_matrix, customer_info)
@@ -32,6 +37,25 @@ def prepare_customer_features():
     df = df.with_columns([
         pl.col('InvoiceDate').str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S").alias('InvoiceDate')
     ])
+    
+    # Aplicar filtro de país si se especifica
+    if country:
+        df = df.filter(pl.col('Country') == country)
+    
+    # Aplicar filtro de fechas si se especifica
+    if start_date:
+        start_datetime = pl.datetime(int(start_date[:4]), int(start_date[5:7]), 1)
+        df = df.filter(pl.col('InvoiceDate') >= start_datetime)
+    
+    if end_date:
+        # Último día del mes especificado
+        year = int(end_date[:4])
+        month = int(end_date[5:7])
+        if month == 12:
+            end_datetime = pl.datetime(year + 1, 1, 1)
+        else:
+            end_datetime = pl.datetime(year, month + 1, 1)
+        df = df.filter(pl.col('InvoiceDate') < end_datetime)
     
     # Crear columna Total
     df = df.with_columns(
@@ -129,7 +153,8 @@ def prepare_customer_features():
 
 def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean', 
                                     normalization='zscore', dimred='pca',
-                                    x_axis=None, y_axis=None):
+                                    x_axis=None, y_axis=None,
+                                    country=None, start_date=None, end_date=None):
     """
     Calcula el gráfico de similitud de clientes con todos los componentes
     
@@ -141,12 +166,19 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
         dimred: método de reducción dimensional ('pca', 'tsne', 'umap')
         x_axis: índice de característica para eje X (0-6, opcional)
         y_axis: índice de característica para eje Y (0-6, opcional)
+        country: País para filtrar (opcional)
+        start_date: Fecha de inicio del período (formato 'YYYY-MM', opcional)
+        end_date: Fecha de fin del período (formato 'YYYY-MM', opcional)
     
     Returns:
         dict con toda la información para visualización
     """
-    # 1. Preparar características de clientes
-    customer_ids, features, customer_info = prepare_customer_features()
+    # 1. Preparar características de clientes con filtros
+    customer_ids, features, customer_info = prepare_customer_features(
+        country=country,
+        start_date=start_date,
+        end_date=end_date
+    )
     
     if len(customer_ids) == 0:
         return {
@@ -311,12 +343,21 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
     }
 
 
-def get_all_customer_ids():
+def get_all_customer_ids(country=None, start_date=None, end_date=None):
     """
     Obtiene todos los IDs de clientes disponibles
+    
+    Args:
+        country: País para filtrar (opcional)
+        start_date: Fecha de inicio del período (formato 'YYYY-MM', opcional)
+        end_date: Fecha de fin del período (formato 'YYYY-MM', opcional)
     
     Returns:
         lista de CustomerIDs
     """
-    customer_ids, _, _ = prepare_customer_features()
+    customer_ids, _, _ = prepare_customer_features(
+        country=country,
+        start_date=start_date,
+        end_date=end_date
+    )
     return customer_ids

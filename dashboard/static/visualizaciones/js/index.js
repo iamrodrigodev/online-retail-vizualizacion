@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Inicializar el filtro temporal
         function initializeTimeFilter() {
             if (!dateRange.min || !dateRange.max) {
-                console.log('No hay rango de fechas disponible');
                 return;
             }
             
@@ -256,6 +255,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateSalesTrend();
                 updateTopProducts();
                 updateCustomerProfiles();
+                
+                // Actualizar gráfico de similitud si está visible
+                if (similarityContainer && similarityContainer.style.display !== 'none') {
+                    loadCustomerIds();
+                }
             }
             
             // Event listeners para los sliders
@@ -436,14 +440,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 url += '?' + params.toString();
             }
             
-            console.log('Actualizando ventas con:', { 
-                country: selectedCountry, 
-                profile: selectedProfile, 
-                startDate: selectedStartDate,
-                endDate: selectedEndDate,
-                url: url 
-            });
-            
             // Hacer petición al servidor
             fetch(url)
                 .then(response => response.json())
@@ -489,14 +485,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (params.toString()) {
                 url += '?' + params.toString();
             }
-            
-            console.log('Actualizando productos con:', { 
-                country: selectedCountry, 
-                profile: selectedProfile,
-                startDate: selectedStartDate,
-                endDate: selectedEndDate,
-                url: url 
-            });
             
             // Hacer petición al servidor
             fetch(url)
@@ -777,6 +765,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     updateSalesTrend();
                     // Actualizar gráfico de productos
                     updateTopProducts();
+                    
+                    // Actualizar gráfico de similitud si está visible
+                    if (similarityContainer && similarityContainer.style.display !== 'none') {
+                        loadCustomerIds();
+                    }
                 });
             } else {
                 // Seleccionar el nuevo país
@@ -835,6 +828,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             updateSalesTrend();
                             // Actualizar gráfico de productos
                             updateTopProducts();
+                            
+                            // Actualizar gráfico de similitud si está visible
+                            if (similarityContainer && similarityContainer.style.display !== 'none') {
+                                loadCustomerIds();
+                            }
                         });
                     })
                     .catch(error => {
@@ -884,9 +882,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Función para cargar los IDs de clientes con cache
     function loadCustomerIds() {
-        // Si ya están en cache, usarlos directamente
-        if (customerIdsCache) {
-            populateCustomerSelect(customerIdsCache);
+        // Crear clave de caché para IDs (incluir filtros)
+        const cacheKey = `${selectedCountry || 'all'}_${selectedStartDate || 'start'}_${selectedEndDate || 'end'}`;
+        
+        // Si ya están en cache para estos filtros, usarlos directamente
+        if (customerIdsCache && customerIdsCache.cacheKey === cacheKey) {
+            populateCustomerSelect(customerIdsCache.ids);
             similarityContainer.style.display = 'block';
             updateSimilarityGraph();
             return;
@@ -902,15 +903,36 @@ document.addEventListener('DOMContentLoaded', function () {
         // NO tocar el selector mientras carga para evitar que se ponga gris
         // Solo actualizarlo cuando tengamos los datos
         
-        fetch('/api/client-similarity/customer-ids/')
+        // Construir URL con parámetros de filtro
+        let url = '/api/client-similarity/customer-ids/';
+        const params = new URLSearchParams();
+        
+        if (selectedCountry) {
+            params.append('country', selectedCountry);
+        }
+        if (selectedStartDate) {
+            params.append('start_date', selectedStartDate);
+        }
+        if (selectedEndDate) {
+            params.append('end_date', selectedEndDate);
+        }
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 if (data.customer_ids && data.customer_ids.length > 0) {
-                    // Guardar en cache
-                    customerIdsCache = data.customer_ids;
+                    // Guardar en cache con la clave de filtros
+                    customerIdsCache = {
+                        cacheKey: cacheKey,
+                        ids: data.customer_ids
+                    };
                     
                     // Poblar el selector
-                    populateCustomerSelect(customerIdsCache);
+                    populateCustomerSelect(data.customer_ids);
                     
                     // Mostrar el contenedor
                     similarityContainer.style.display = 'block';
@@ -951,6 +973,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+    // Función para actualizar el rango de fechas del gráfico de similitud
+    function updateClientSimilarityDateRange() {
+        const clientSimilarityDateRange = document.getElementById('clientSimilarityDateRange');
+        if (!clientSimilarityDateRange) return;
+        
+        // Si no hay filtros de fecha, no mostrar nada
+        if (!selectedStartDate || !selectedEndDate) {
+            clientSimilarityDateRange.innerHTML = '';
+            return;
+        }
+        
+        // Formatear las fechas
+        const [startYear, startMonth] = selectedStartDate.split('-');
+        const [endYear, endMonth] = selectedEndDate.split('-');
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        
+        const startMonthName = monthNames[parseInt(startMonth) - 1];
+        const endMonthName = monthNames[parseInt(endMonth) - 1];
+        
+        let rangeText = `Período: ${startMonthName} ${startYear} - ${endMonthName} ${endYear}`;
+        
+        clientSimilarityDateRange.innerHTML = rangeText;
+    }
+    
     // Función para actualizar el gráfico de similitud
     function updateSimilarityGraph() {
         const customerId = customerSelect.value || null;
@@ -967,13 +1014,13 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         
-        // Crear clave de caché
-        const cacheKey = `${customerId || 'all'}_${k}_${norm}_${met}_${dim}_${xAxisFeature}_${yAxisFeature}`;
+        // Crear clave de caché (incluir país y fechas)
+        const cacheKey = `${selectedCountry || 'all'}_${selectedStartDate || 'start'}_${selectedEndDate || 'end'}_${customerId || 'all'}_${k}_${norm}_${met}_${dim}_${xAxisFeature}_${yAxisFeature}`;
         
         // Verificar si ya existe en caché
         if (similarityGraphCache[cacheKey]) {
-            console.log('Usando datos del caché para:', cacheKey);
             renderSimilarityGraph(similarityGraphCache[cacheKey], customerId);
+            updateClientSimilarityDateRange();
             return;
         }
         
@@ -987,7 +1034,10 @@ document.addEventListener('DOMContentLoaded', function () {
             k: k,
             metric: met,
             normalization: norm,
-            dimred: dim
+            dimred: dim,
+            country: selectedCountry,
+            start_date: selectedStartDate,
+            end_date: selectedEndDate
         };
         
         // Añadir ejes si están seleccionados
@@ -1016,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // Guardar en caché
             similarityGraphCache[cacheKey] = data;
-            console.log('Datos guardados en caché:', cacheKey);
             
             // Actualizar información
             if (data.total_customers) {
@@ -1041,8 +1090,6 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Función para renderizar el gráfico
     function renderSimilarityGraph(data, selectedCustomerId) {
-        console.log('Renderizando gráfico con cliente seleccionado:', selectedCustomerId);
-        
         if (!data.embedding || data.embedding.length === 0) {
             similarityGraph.innerHTML = '<p style="text-align: center; padding: 50px;">No hay datos disponibles</p>';
             return;
@@ -1094,10 +1141,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const pointIdStr = String(point.id);
             const isSelected = selectedIdStr && pointIdStr === selectedIdStr;
             const isNeighbor = data.neighbors && data.neighbors.some(n => String(n.id) === pointIdStr);
-            
-            if (isSelected) {
-                console.log('Cliente seleccionado encontrado:', pointIdStr);
-            }
             
             let category;
             if (isSelected) {
@@ -1262,7 +1305,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const yName = data.axis_info.y_axis_name || 'Eje Y';
             xaxisTitle = xName;
             yaxisTitle = yName;
-            titleText = `Gráfico de Similitud de Clientes - Análisis RFM: ${xName} vs ${yName}`;
         } else if (data.pca_variance) {
             // Usar PCA con información de varianza
             const pc1Var = data.pca_variance.pc1_variance.toFixed(1);
@@ -1282,10 +1324,15 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 yaxisTitle = `Dimensión 2 (${pc2Var}%)`;
             }
-            
-            // Mostrar el total de clientes en lugar del porcentaje de varianza
-            const totalCustomers = data.total_customers || data.embedding.length;
-            titleText = `Gráfico de Similitud de Clientes - Análisis RFM (${totalCustomers.toLocaleString('es-ES')} clientes)`;
+        }
+        
+        // Título dinámico basado en filtros (país y fechas)
+        const totalCustomers = data.total_customers || data.embedding.length;
+        
+        if (selectedCountry) {
+            titleText = `${selectedCountry} (${totalCustomers.toLocaleString('es-ES')} clientes)`;
+        } else {
+            titleText = `Todos los países (${totalCustomers.toLocaleString('es-ES')} clientes)`;
         }
         
         // Layout del gráfico (con zoom habilitado como el mapa mundial)
@@ -1351,22 +1398,20 @@ document.addEventListener('DOMContentLoaded', function () {
             scatterLayers.forEach(layer => {
                 layer.style.cursor = 'pointer';
             });
+            
+            // Actualizar el subtítulo con el rango de fechas
+            updateClientSimilarityDateRange();
         });
         
         // Agregar evento de clic en puntos para seleccionar cliente
         similarityGraph.on('plotly_click', function(eventData) {
-            console.log('Click detectado en gráfico:', eventData);
             const point = eventData.points[0];
-            console.log('Punto clickeado:', point);
-            console.log('Customdata:', point.customdata);
             
             if (point.customdata && point.customdata.length > 0) {
                 const clickedId = point.customdata[0];
-                console.log('ID del cliente clickeado:', clickedId);
                 
                 // Si el cliente clickeado ya está seleccionado, deseleccionarlo
                 if (customerSelect.value === String(clickedId)) {
-                    console.log('Deseleccionando cliente:', clickedId);
                     customerSelect.value = '';
                     
                     // Deshabilitar K cuando se deselecciona
@@ -1378,7 +1423,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else {
                     // Seleccionar nuevo cliente
-                    console.log('Seleccionando cliente:', clickedId);
                     customerSelect.value = clickedId;
                     
                     // Habilitar K si estaba deshabilitado
@@ -1391,8 +1435,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Actualizar el gráfico
                 updateSimilarityGraph();
-            } else {
-                console.log('No se encontró customdata en el punto');
             }
         });
         
