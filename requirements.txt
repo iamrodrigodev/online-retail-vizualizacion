@@ -9,3 +9,9 @@ psycopg2-binary
 
 polars
 plotly
+
+# Dependencias para análisis de similitud de clientes
+numpy>=1.24.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+# umap-learn>=0.5.3  # Opcional - usa PCA como fallback si no está disponible

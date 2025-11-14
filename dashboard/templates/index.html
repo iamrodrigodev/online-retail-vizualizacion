@@ -90,6 +90,97 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Gráfico de Similitud de Clientes -->
+        <div class="client-similarity-container" id="client-similarity-container" style="display: none;">
+            <div class="chart-card">
+                <h3 class="chart-title">Análisis de Similitud de Clientes</h3>
+                
+                <!-- Panel de controles -->
+                <div class="similarity-controls" id="client_similarity_controls">
+                    <div class="controls-row">
+                        <div class="control-group">
+                            <label for="customerSelect">Cliente:</label>
+                            <select id="customerSelect" class="form-control">
+                                <option value="">Todos los clientes</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="kNeighbors">K Vecinos:</label>
+                            <input type="number" id="kNeighbors" class="form-control" 
+                                   min="1" max="500" value="10">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="normalization">Normalización:</label>
+                            <select id="normalization" class="form-control">
+                                <option value="zscore" selected>Z-Score</option>
+                                <option value="minmax_01">Min-Max [0,1]</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="metric">Métrica:</label>
+                            <select id="metric" class="form-control">
+                                <option value="euclidean" selected>Euclidiana</option>
+                                <option value="pearson">Pearson</option>
+                                <option value="cosine">Coseno</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="dimred">Reducción Dim:</label>
+                            <select id="dimred" class="form-control">
+                                <option value="pca" selected>PCA</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="applyButton" class="btn-apply">APLICAR</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Selectores de Ejes -->
+                    <div class="controls-row axis-selectors">
+                        <div class="control-group">
+                            <label for="xAxisFeature">Eje X (Horizontal):</label>
+                            <select id="xAxisFeature" class="form-control">
+                                <option value="">Usar PCA Automático</option>
+                                <option value="0">Recency (Días desde última compra)</option>
+                                <option value="1">Frequency (Número de compras)</option>
+                                <option value="2">Monetary (Total gastado)</option>
+                                <option value="3">TotalQuantity (Cantidad total)</option>
+                                <option value="4">AvgUnitPrice (Precio promedio)</option>
+                                <option value="5">AvgOrderValue (Valor promedio de orden)</option>
+                                <option value="6">UniqueProducts (Productos únicos)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="yAxisFeature">Eje Y (Vertical):</label>
+                            <select id="yAxisFeature" class="form-control">
+                                <option value="">Usar PCA Automático</option>
+                                <option value="0">Recency (Días desde última compra)</option>
+                                <option value="1">Frequency (Número de compras)</option>
+                                <option value="2">Monetary (Total gastado)</option>
+                                <option value="3">TotalQuantity (Cantidad total)</option>
+                                <option value="4">AvgUnitPrice (Precio promedio)</option>
+                                <option value="5">AvgOrderValue (Valor promedio de orden)</option>
+                                <option value="6">UniqueProducts (Productos únicos)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="similarityInfo" class="similarity-info" style="display: none;">
+                        <p><strong>Total de clientes:</strong> <span id="totalCustomers">0</span></p>
+                    </div>
+                </div>
+                
+                <!-- Contenedor del gráfico -->
+                <div id="client_similarity_graph" class="plotly-chart"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->

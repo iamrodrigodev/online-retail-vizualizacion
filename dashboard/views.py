@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 import json
 import plotly.utils
 from .visualizations.world_map.plot import create_world_map_plot
@@ -7,6 +8,11 @@ from .visualizations.customer_profiles.plot import create_customer_profiles_plot
 from .visualizations.sales.plot import create_sales_trend_plot
 from .visualizations.products.plot import create_top_products_plot
 from .visualizations.shared.data_loader import load_online_retail_data
+from .visualizations.client_similarity.data_processor import (
+    compute_client_similarity_graph, 
+    get_all_customer_ids
+)
+from .visualizations.client_similarity.plot import create_client_similarity_plot
 import polars as pl
 
 def index(request):
@@ -160,4 +166,78 @@ def get_top_products(request):
         'country': country,
         'profile': customer_profile
     })
+
+
+@require_http_methods(["POST"])
+def compute_client_similarity(request):
+    """
+    API endpoint para calcular el gráfico de similitud de clientes
+    """
+    try:
+        # Parsear datos JSON del body
+        data = json.loads(request.body)
+        
+        # Extraer parámetros
+        customer_id = data.get('customer_id', None)
+        k = int(data.get('k', 10))
+        metric = data.get('metric', 'euclidean')
+        normalization = data.get('normalization', 'zscore')
+        dimred = data.get('dimred', 'pca')
+        x_axis = data.get('x_axis', None)
+        y_axis = data.get('y_axis', None)
+        
+        # Convertir a enteros si están presentes
+        if x_axis is not None:
+            x_axis = int(x_axis)
+        if y_axis is not None:
+            y_axis = int(y_axis)
+        
+        # Validar parámetros
+        if k < 1 or k > 500:
+            return JsonResponse({'error': 'K debe estar entre 1 y 500'}, status=400)
+        
+        if metric not in ['euclidean', 'cosine', 'pearson']:
+            return JsonResponse({'error': 'Métrica no válida'}, status=400)
+        
+        if normalization not in ['zscore', 'minmax_01']:
+            return JsonResponse({'error': 'Normalización no válida'}, status=400)
+        
+        if dimred not in ['pca']:
+            return JsonResponse({'error': 'Solo PCA está soportado'}, status=400)
+        
+        # Calcular el gráfico
+        result = compute_client_similarity_graph(
+            customer_id=customer_id,
+            k=k,
+            metric=metric,
+            normalization=normalization,
+            dimred=dimred,
+            x_axis=x_axis,
+            y_axis=y_axis
+        )
+        
+        return JsonResponse(result)
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        print(f"Error en compute_client_similarity: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_customer_ids(request):
+    """
+    API endpoint para obtener todos los IDs de clientes disponibles
+    """
+    try:
+        customer_ids = get_all_customer_ids()
+        return JsonResponse({
+            'customer_ids': customer_ids,
+            'total': len(customer_ids)
+        })
+    except Exception as e:
+        print(f"Error en get_customer_ids: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 

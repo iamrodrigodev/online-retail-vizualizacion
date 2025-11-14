@@ -849,4 +849,494 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         console.error('No se pudo renderizar el mapa. Faltan elementos (div, Plotly) o datos (worldMapData).');
     }
+    
+    // =============================
+    // SIMILITUD DE CLIENTES
+    // =============================
+    
+    const similarityContainer = document.getElementById('client-similarity-container');
+    const similarityGraph = document.getElementById('client_similarity_graph');
+    const customerSelect = document.getElementById('customerSelect');
+    const kNeighbors = document.getElementById('kNeighbors');
+    const normalization = document.getElementById('normalization');
+    const metric = document.getElementById('metric');
+    const dimred = document.getElementById('dimred');
+    const applyButton = document.getElementById('applyButton');
+    const similarityInfo = document.getElementById('similarityInfo');
+    const totalCustomersSpan = document.getElementById('totalCustomers');
+    
+    let currentSimilarityData = null;
+    
+    // Función para cargar los IDs de clientes
+    function loadCustomerIds() {
+        fetch('/api/client-similarity/customer-ids/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.customer_ids && data.customer_ids.length > 0) {
+                    // Guardar el valor actual antes de limpiar
+                    const currentValue = customerSelect.value;
+                    
+                    // Limpiar el select
+                    customerSelect.innerHTML = '<option value="">Todos los clientes</option>';
+                    
+                    // Agregar opciones sin decimales
+                    data.customer_ids.forEach(id => {
+                        const option = document.createElement('option');
+                        const cleanId = parseInt(id); // Eliminar decimales
+                        option.value = cleanId;
+                        option.textContent = `Cliente ${cleanId}`;
+                        customerSelect.appendChild(option);
+                    });
+                    
+                    // Restaurar el valor anterior si existía
+                    if (currentValue) {
+                        customerSelect.value = currentValue;
+                    }
+                    
+                    // Mostrar el contenedor
+                    similarityContainer.style.display = 'block';
+                    
+                    // Cargar el gráfico inicial
+                    updateSimilarityGraph();
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar IDs de clientes:', error);
+            });
+    }
+    
+    // Función para actualizar el gráfico de similitud
+    function updateSimilarityGraph() {
+        const customerId = customerSelect.value || null;
+        const k = parseInt(kNeighbors.value);
+        const norm = normalization.value;
+        const met = metric.value;
+        const dim = dimred.value;
+        const xAxisFeature = document.getElementById('xAxisFeature').value;
+        const yAxisFeature = document.getElementById('yAxisFeature').value;
+        
+        // Validación
+        if (k < 1 || k > 500) {
+            alert('K debe estar entre 1 y 500');
+            return;
+        }
+        
+        // Mostrar mensaje de carga
+        applyButton.disabled = true;
+        applyButton.textContent = 'Calculando...';
+        
+        // Preparar datos para enviar
+        const requestData = {
+            customer_id: customerId,
+            k: k,
+            metric: met,
+            normalization: norm,
+            dimred: dim
+        };
+        
+        // Añadir ejes si están seleccionados
+        if (xAxisFeature !== '' && yAxisFeature !== '') {
+            requestData.x_axis = parseInt(xAxisFeature);
+            requestData.y_axis = parseInt(yAxisFeature);
+        }
+        
+        // Hacer petición POST
+        fetch('/api/client-similarity/compute/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            currentSimilarityData = data;
+            
+            // Actualizar información
+            if (data.total_customers) {
+                totalCustomersSpan.textContent = data.total_customers;
+                similarityInfo.style.display = 'block';
+            }
+            
+            // Renderizar el gráfico
+            renderSimilarityGraph(data, customerId);
+            
+            // Restaurar botón
+            applyButton.disabled = false;
+            applyButton.textContent = 'APLICAR';
+        })
+        .catch(error => {
+            console.error('Error al calcular similitud:', error);
+            alert('Error al calcular similitud de clientes');
+            applyButton.disabled = false;
+            applyButton.textContent = 'APLICAR';
+        });
+    }
+    
+    // Función para renderizar el gráfico
+    function renderSimilarityGraph(data, selectedCustomerId) {
+        if (!data.embedding || data.embedding.length === 0) {
+            similarityGraph.innerHTML = '<p style="text-align: center; padding: 50px;">No hay datos disponibles</p>';
+            return;
+        }
+        
+        // Separar datos por CLUSTER (grupos de comportamiento RFM)
+        const clusterGroups = {};
+        const clusterTypes = {};  // Para calcular tipo predominante
+        
+        // Paleta de colores distintivos para CLUSTERS
+        const clusterColorPalette = [
+            '#e74c3c',  // Rojo vibrante - Cluster 0
+            '#3498db',  // Azul brillante - Cluster 1
+            '#2ecc71',  // Verde esmeralda - Cluster 2
+            '#f39c12',  // Naranja dorado - Cluster 3
+            '#9b59b6',  // Púrpura - Cluster 4 (backup)
+            '#1abc9c',  // Turquesa - Cluster 5 (backup)
+        ];
+        
+        data.embedding.forEach(point => {
+            const clusterId = point.cluster;
+            const customerType = point.customer_type;
+            
+            if (!clusterGroups[clusterId]) {
+                clusterGroups[clusterId] = {
+                    normal: { x: [], y: [], text: [], ids: [] },
+                    outlier: { x: [], y: [], text: [], ids: [] },
+                    neighbor: { x: [], y: [], text: [], ids: [] },
+                    selected: { x: [], y: [], text: [], ids: [] }
+                };
+                clusterTypes[clusterId] = [];
+            }
+            
+            clusterTypes[clusterId].push(customerType);
+            
+            // Tooltip muestra: cluster + tipo individual + métricas RFM
+            const text = `<b>Cluster RFM:</b> ${clusterId}<br>` +
+                        `<b>Tipo de Cliente:</b> ${customerType}<br>` +
+                        `<b>ID:</b> ${point.id}<br>` +
+                        `<b>Total gastado:</b> $${point.total_spent.toLocaleString()}<br>` +
+                        `<b>Frecuencia:</b> ${point.frequency} compras<br>` +
+                        `<b>Productos únicos:</b> ${point.unique_products}<br>` +
+                        `<b>País:</b> ${point.country}`;
+            
+            const isSelected = selectedCustomerId && point.id === selectedCustomerId;
+            const isNeighbor = data.neighbors && data.neighbors.some(n => n.id === point.id);
+            
+            let category;
+            if (isSelected) {
+                category = 'selected';
+            } else if (isNeighbor) {
+                category = 'neighbor';
+            } else if (point.outlier) {
+                category = 'outlier';
+            } else {
+                category = 'normal';
+            }
+            
+            clusterGroups[clusterId][category].x.push(point.x);
+            clusterGroups[clusterId][category].y.push(point.y);
+            clusterGroups[clusterId][category].text.push(text);
+            clusterGroups[clusterId][category].ids.push(point.id);
+        });
+        
+        // Calcular tipo predominante por cluster (para nombre descriptivo)
+        const clusterNames = {};
+        Object.keys(clusterTypes).forEach(clusterId => {
+            const types = clusterTypes[clusterId];
+            const typeCounts = {};
+            types.forEach(t => {
+                typeCounts[t] = (typeCounts[t] || 0) + 1;
+            });
+            const predominantType = Object.keys(typeCounts).reduce((a, b) => 
+                typeCounts[a] > typeCounts[b] ? a : b
+            );
+            const total = types.length;
+            const percentage = Math.round((typeCounts[predominantType] / total) * 100);
+            clusterNames[clusterId] = `Cluster ${clusterId}: ${predominantType} (${percentage}%)`;
+        });
+        
+        // Crear traces de Plotly
+        const traces = [];
+        
+        // Líneas de conexión (dibujar primero)
+        if (data.edges && data.edges.length > 0) {
+            const coordsDict = {};
+            data.embedding.forEach(p => {
+                coordsDict[p.id] = { x: p.x, y: p.y };
+            });
+            
+            data.edges.forEach(edge => {
+                const source = coordsDict[edge.source];
+                const target = coordsDict[edge.target];
+                
+                if (source && target) {
+                    traces.push({
+                        x: [source.x, target.x],
+                        y: [source.y, target.y],
+                        mode: 'lines',
+                        line: { color: 'rgba(150, 150, 150, 0.3)', width: 1 },
+                        hoverinfo: 'skip',
+                        showlegend: false
+                    });
+                }
+            });
+        }
+        
+        // Agregar puntos por CLUSTER (con colores distintivos)
+        Object.keys(clusterGroups).forEach(clusterId => {
+            const clusterData = clusterGroups[clusterId];
+            const color = clusterColorPalette[parseInt(clusterId) % clusterColorPalette.length];
+            const clusterName = clusterNames[clusterId] || `Cluster ${clusterId}`;
+            
+            // Puntos normales
+            if (clusterData.normal.x.length > 0) {
+                traces.push({
+                    x: clusterData.normal.x,
+                    y: clusterData.normal.y,
+                    mode: 'markers',
+                    name: clusterName,
+                    marker: {
+                        size: 8,
+                        color: color,
+                        symbol: 'circle',
+                        line: { width: 0.5, color: 'white' }
+                    },
+                    text: clusterData.normal.text,
+                    hovertemplate: '%{text}<extra></extra>',
+                    customdata: clusterData.normal.ids
+                });
+            }
+            
+            // Outliers
+            if (clusterData.outlier.x.length > 0) {
+                traces.push({
+                    x: clusterData.outlier.x,
+                    y: clusterData.outlier.y,
+                    mode: 'markers',
+                    name: `${clusterName} (Atípicos)`,
+                    marker: {
+                        size: 10,
+                        color: color,
+                        symbol: 'diamond',
+                        line: { width: 1, color: 'black' }
+                    },
+                    text: clusterData.outlier.text,
+                    hovertemplate: '%{text}<extra></extra>',
+                    customdata: clusterData.outlier.ids
+                });
+            }
+            
+            // Vecinos
+            if (clusterData.neighbor.x.length > 0) {
+                traces.push({
+                    x: clusterData.neighbor.x,
+                    y: clusterData.neighbor.y,
+                    mode: 'markers',
+                    name: `Vecinos - ${clusterName}`,
+                    marker: {
+                        size: 12,
+                        color: color,
+                        symbol: 'circle',
+                        line: { width: 2, color: 'yellow' }
+                    },
+                    text: clusterData.neighbor.text,
+                    hovertemplate: '%{text}<extra></extra>',
+                    customdata: clusterData.neighbor.ids
+                });
+            }
+            
+            // Cliente seleccionado
+            if (clusterData.selected.x.length > 0) {
+                traces.push({
+                    x: clusterData.selected.x,
+                    y: clusterData.selected.y,
+                    mode: 'markers',
+                    name: 'Cliente Seleccionado',
+                    marker: {
+                        size: 16,
+                        color: 'red',
+                        symbol: 'star',
+                        line: { width: 2, color: 'darkred' }
+                    },
+                    text: clusterData.selected.text,
+                    hovertemplate: '%{text}<extra></extra>',
+                    customdata: clusterData.selected.ids
+                });
+            }
+        });
+        
+        // Configurar títulos de ejes
+        let xaxisTitle = 'Dimensión 1';
+        let yaxisTitle = 'Dimensión 2';
+        let titleText = 'Gráfico de Similitud de Clientes';
+        
+        // Verificar si se usan ejes personalizados
+        if (data.axis_info && data.axis_info.use_pca === false) {
+            // Usar características directas
+            const xName = data.axis_info.x_axis_name || 'Eje X';
+            const yName = data.axis_info.y_axis_name || 'Eje Y';
+            xaxisTitle = xName;
+            yaxisTitle = yName;
+            titleText = `Gráfico de Similitud de Clientes (Análisis RFM: ${xName} vs ${yName})`;
+        } else if (data.pca_variance) {
+            // Usar PCA con información de varianza
+            const pc1Var = data.pca_variance.pc1_variance.toFixed(1);
+            const pc2Var = data.pca_variance.pc2_variance.toFixed(1);
+            const totalVar = data.pca_variance.total_variance.toFixed(1);
+            const pc1Features = data.pca_variance.pc1_features || [];
+            const pc2Features = data.pca_variance.pc2_features || [];
+            
+            // Mostrar solo la característica MÁS IMPORTANTE de cada dimensión
+            if (pc1Features.length > 0) {
+                xaxisTitle = `${pc1Features[0]} (${pc1Var}%)`;
+            } else {
+                xaxisTitle = `Dimensión 1 (${pc1Var}%)`;
+            }
+            
+            if (pc2Features.length > 0) {
+                yaxisTitle = `${pc2Features[0]} (${pc2Var}%)`;
+            } else {
+                yaxisTitle = `Dimensión 2 (${pc2Var}%)`;
+            }
+            
+            titleText = `Gráfico de Similitud de Clientes (Análisis RFM - ${totalVar}% información)`;
+        }
+        
+        // Layout del gráfico (con zoom habilitado como el mapa mundial)
+        const layout = {
+            title: {
+                text: titleText,
+                x: 0.5,
+                xanchor: 'center',
+                font: { size: 20, color: '#0824a4', family: 'Arial, sans-serif' }
+            },
+            xaxis: {
+                title: xaxisTitle,
+                showgrid: true,
+                gridcolor: 'rgba(200, 200, 200, 0.2)',
+                zeroline: false,
+                fixedrange: false  // Habilitar zoom en eje X
+            },
+            yaxis: {
+                title: yaxisTitle,
+                showgrid: true,
+                gridcolor: 'rgba(200, 200, 200, 0.2)',
+                zeroline: false,
+                fixedrange: false  // Habilitar zoom en eje Y
+            },
+            hovermode: 'closest',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: true,
+            legend: {
+                orientation: 'v',
+                yanchor: 'top',
+                y: 1,
+                xanchor: 'left',
+                x: 1.02,
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                bordercolor: '#e0e0e0',
+                borderwidth: 1,
+                font: { size: 11, color: '#2c3e50' }
+            },
+            dragmode: 'pan',  // Habilitar movimiento/arrastre (como el mapa mundial)
+            height: 700,
+            margin: { l: 50, r: 200, t: 80, b: 50 }
+        };
+        
+        // Renderizar el gráfico con controles de zoom habilitados
+        Plotly.newPlot(similarityGraph, traces, layout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            scrollZoom: true  // Habilitar zoom con scroll del mouse
+        });
+        
+        // Agregar evento de clic en puntos
+        similarityGraph.on('plotly_click', function(eventData) {
+            const point = eventData.points[0];
+            if (point.customdata && point.customdata.length > 0) {
+                const clickedId = point.customdata[0];
+                customerSelect.value = clickedId;
+                updateSimilarityGraph();
+            }
+        });
+    }
+    
+    // Función auxiliar para obtener el CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Event listeners
+    if (applyButton) {
+        applyButton.addEventListener('click', updateSimilarityGraph);
+    }
+    
+    // Event listener para bloquear/desbloquear K según cliente seleccionado
+    if (customerSelect && kNeighbors) {
+        customerSelect.addEventListener('change', function() {
+            if (customerSelect.value === '' || customerSelect.value === null) {
+                // "Todos los clientes" seleccionado - bloquear K
+                kNeighbors.disabled = true;
+                kNeighbors.value = 10; // Valor por defecto
+                kNeighbors.style.backgroundColor = '#e0e0e0';
+                kNeighbors.style.cursor = 'not-allowed';
+            } else {
+                // Cliente específico seleccionado - habilitar K
+                kNeighbors.disabled = false;
+                kNeighbors.style.backgroundColor = '';
+                kNeighbors.style.cursor = '';
+            }
+        });
+        
+        // Ejecutar al cargar para establecer estado inicial
+        if (customerSelect.value === '' || customerSelect.value === null) {
+            kNeighbors.disabled = true;
+            kNeighbors.style.backgroundColor = '#e0e0e0';
+            kNeighbors.style.cursor = 'not-allowed';
+        }
+    }
+    
+    // Event listeners para los selectores de ejes
+    const xAxisFeature = document.getElementById('xAxisFeature');
+    const yAxisFeature = document.getElementById('yAxisFeature');
+    
+    if (xAxisFeature && yAxisFeature) {
+        xAxisFeature.addEventListener('change', function() {
+            // Solo actualizar si ambos ejes están seleccionados
+            if (xAxisFeature.value !== '' && yAxisFeature.value !== '') {
+                updateSimilarityGraph();
+            }
+        });
+        
+        yAxisFeature.addEventListener('change', function() {
+            // Solo actualizar si ambos ejes están seleccionados
+            if (xAxisFeature.value !== '' && yAxisFeature.value !== '') {
+                updateSimilarityGraph();
+            }
+        });
+    }
+    
+    // Cargar IDs de clientes al iniciar
+    if (similarityContainer) {
+        loadCustomerIds();
+    }
 });
