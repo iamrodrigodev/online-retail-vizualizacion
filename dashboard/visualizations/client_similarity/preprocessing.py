@@ -6,7 +6,7 @@ import numpy as np
 
 def normalize_zscore(X):
     """
-    Normalización Z-Score (estandarización)
+    Normalización Z-Score (estandarización) optimizada para memoria
     
     Args:
         X: matriz numpy de forma (n_samples, n_features)
@@ -14,16 +14,20 @@ def normalize_zscore(X):
     Returns:
         matriz normalizada con media 0 y desviación estándar 1
     """
-    mean = np.mean(X, axis=0)
-    std = np.std(X, axis=0)
+    # Convertir a float32 si no lo es
+    if X.dtype != np.float32:
+        X = X.astype(np.float32)
+    
+    mean = np.mean(X, axis=0, dtype=np.float32)
+    std = np.std(X, axis=0, dtype=np.float32)
     # Evitar división por cero
     std[std == 0] = 1
-    return (X - mean) / std
+    return ((X - mean) / std).astype(np.float32)
 
 
 def normalize_minmax(X):
     """
-    Normalización Min-Max (escalado a rango [0, 1])
+    Normalización Min-Max (escalado a rango [0, 1]) optimizada para memoria
     
     Args:
         X: matriz numpy de forma (n_samples, n_features)
@@ -31,12 +35,16 @@ def normalize_minmax(X):
     Returns:
         matriz normalizada en el rango [0, 1]
     """
-    min_val = np.min(X, axis=0)
-    max_val = np.max(X, axis=0)
+    # Convertir a float32 si no lo es
+    if X.dtype != np.float32:
+        X = X.astype(np.float32)
+    
+    min_val = np.min(X, axis=0).astype(np.float32)
+    max_val = np.max(X, axis=0).astype(np.float32)
     # Evitar división por cero
     range_val = max_val - min_val
     range_val[range_val == 0] = 1
-    return (X - min_val) / range_val
+    return ((X - min_val) / range_val).astype(np.float32)
 
 
 def apply_normalization(X, method='zscore'):

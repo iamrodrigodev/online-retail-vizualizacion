@@ -173,6 +173,8 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
     Returns:
         dict con toda la información para visualización
     """
+    import gc
+    
     # 1. Preparar características de clientes con filtros
     customer_ids, features, customer_info = prepare_customer_features(
         country=country,
@@ -190,6 +192,9 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
     
     # 2. Normalizar características
     features_normalized = apply_normalization(features, method=normalization)
+    
+    # Convertir a float32 para ahorrar memoria (50% menos que float64)
+    features_normalized = features_normalized.astype(np.float32)
     
     # Verificar que no haya NaN o Inf después de la normalización
     if np.any(np.isnan(features_normalized)) or np.any(np.isinf(features_normalized)):
@@ -258,6 +263,28 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
     # 6. Detectar outliers
     outlier_mask = detect_outliers_statistical(features_normalized, threshold=3)
     
+    # Copiar vecinos antes de liberar distance_matrix si se necesita
+    neighbors_indices = None
+    neighbors_distances = None
+    if customer_id is not None:
+        customer_id_str = str(customer_id)
+        try:
+            customer_idx = customer_ids.index(customer_id_str)
+        except ValueError:
+            try:
+                customer_idx = customer_ids.index(customer_id)
+            except ValueError:
+                customer_idx = None
+        
+        if customer_idx is not None:
+            neighbors_result = find_k_nearest_neighbors(distance_matrix, k=k, customer_idx=customer_idx)
+            neighbors_indices = neighbors_result['neighbor_indices']
+            neighbors_distances = neighbors_result['neighbor_distances']
+    
+    # Liberar matriz de distancias AHORA (puede ser muy grande)
+    del distance_matrix
+    gc.collect()
+    
     # 7. Preparar datos de embedding
     embedding_data = []
     for i, cust_id in enumerate(customer_ids):
@@ -276,38 +303,13 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
             'country': customer_info[cust_id]['country']
         })
     
-    # 8. Encontrar vecinos si se especifica un cliente
+    # 8. Preparar vecinos si se calcularon anteriormente
     neighbors_data = []
     edges_data = []
     
-    if customer_id is not None:
-        # Convertir customer_id a string para comparación
-        customer_id_str = str(customer_id)
-        
-        # Encontrar el índice del cliente
-        try:
-            customer_idx = customer_ids.index(customer_id_str)
-        except ValueError:
-            # El cliente no existe, intentar sin comillas
-            try:
-                customer_idx = customer_ids.index(customer_id)
-            except ValueError:
-                return {
-                    'embedding': embedding_data,
-                    'neighbors': [],
-                    'edges': [],
-                    'error': f'Cliente {customer_id} no encontrado'
-                }
-        
-        # Encontrar K vecinos
-        neighbors_result = find_k_nearest_neighbors(distance_matrix, k=k, 
-                                                    customer_idx=customer_idx)
-        
-        # Preparar datos de vecinos
-        for i, (neighbor_idx, distance) in enumerate(zip(
-            neighbors_result['neighbor_indices'],
-            neighbors_result['neighbor_distances']
-        )):
+    if neighbors_indices is not None and neighbors_distances is not None:
+        # Preparar datos de vecinos usando los índices precalculados
+        for i, (neighbor_idx, distance) in enumerate(zip(neighbors_indices, neighbors_distances)):
             neighbor_id = customer_ids[neighbor_idx]
             neighbors_data.append({
                 'id': str(neighbor_id),
@@ -316,9 +318,21 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
             })
         
         # Crear edges (conexiones)
-        edges_data = create_edges_list(customer_idx, 
-                                       neighbors_result['neighbor_indices'],
-                                       customer_ids)
+        customer_id_str = str(customer_id)
+        try:
+            customer_idx = customer_ids.index(customer_id_str)
+        except ValueError:
+            try:
+                customer_idx = customer_ids.index(customer_id)
+            except ValueError:
+                customer_idx = None
+        
+        if customer_idx is not None:
+            edges_data = create_edges_list(customer_idx, neighbors_indices, customer_ids)
+    
+    # Liberar memoria de matrices grandes
+    del features_normalized
+    gc.collect()
     
     return {
         'embedding': embedding_data,

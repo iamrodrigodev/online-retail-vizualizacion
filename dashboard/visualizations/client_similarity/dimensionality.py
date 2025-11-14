@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 
 def apply_pca(X, n_components=2, random_state=42):
     """
-    Aplica PCA para reducción dimensional (optimizado para grandes datasets)
+    Aplica PCA para reducción dimensional (optimizado para memoria y velocidad)
     
     Args:
         X: matriz numpy de forma (n_samples, n_features)
@@ -21,6 +21,10 @@ def apply_pca(X, n_components=2, random_state=42):
             - pca_object: objeto PCA ajustado (para análisis adicional)
             - feature_names: nombres de las características RFM
     """
+    # Convertir a float32 si no lo es (ahorra 50% memoria)
+    if X.dtype != np.float32:
+        X = X.astype(np.float32)
+    
     n_samples, n_features = X.shape
     n_components = min(n_components, n_samples, n_features)
     
@@ -28,13 +32,12 @@ def apply_pca(X, n_components=2, random_state=42):
     feature_names = ['Recency', 'Frequency', 'Monetary', 'TotalQuantity', 
                      'AvgUnitPrice', 'AvgOrderValue', 'UniqueProducts']
     
-    # Para datasets grandes, usar randomized SVD que es más rápido
-    if n_samples > 1000:
-        pca = PCA(n_components=n_components, svd_solver='randomized', random_state=random_state)
-    else:
-        pca = PCA(n_components=n_components, random_state=random_state)
+    # SIEMPRE usar randomized SVD - es más rápido y usa menos memoria
+    # Esto es especialmente importante en Railway con límites de recursos
+    pca = PCA(n_components=n_components, svd_solver='randomized', random_state=random_state)
     
-    transformed = pca.fit_transform(X)
+    # Transformar y convertir a float32
+    transformed = pca.fit_transform(X).astype(np.float32)
     
     return transformed, pca.explained_variance_ratio_, pca, feature_names
 
