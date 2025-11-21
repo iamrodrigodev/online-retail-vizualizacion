@@ -679,6 +679,15 @@ document.addEventListener('DOMContentLoaded', function () {
             salesContainer.style.display = 'block';
             productsContainer.style.display = 'block';
 
+            // Forzar resize de gráficos después de mostrarlos (arregla problema de tamaño)
+            setTimeout(function() {
+                Plotly.Plots.resize(mapDiv);
+                Plotly.Plots.resize(profilesDiv);
+                Plotly.Plots.resize(salesDiv);
+                Plotly.Plots.resize(productsDiv);
+                console.log('Gráficos redimensionados correctamente');
+            }, 100);
+
             // Inicializar el filtro temporal
             initializeTimeFilter();
             

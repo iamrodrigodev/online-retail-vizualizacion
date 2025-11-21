@@ -129,7 +129,7 @@ def create_top_products_plot(country=None, customer_profile=None, start_date=Non
         },
         plot_bgcolor='white',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin={"r": 80, "t": 60, "l": 180, "b": 60},
+        margin={"r": 80, "t": 100, "l": 180, "b": 60},  # Aumentado margen superior de 60 a 100
         hovermode='closest',
         dragmode=False,
         annotations=[
@@ -138,13 +138,13 @@ def create_top_products_plot(country=None, customer_profile=None, start_date=Non
                 xref='paper',
                 yref='paper',
                 x=0.5,
-                y=1.08,
+                y=1.05,  # Ajustado de 1.08 a 1.05 para evitar solapamiento
                 xanchor='center',
                 yanchor='bottom',
                 showarrow=False,
                 font=dict(
                     size=11,
-                    color='#000000',
+                    color='#666666',  # Color más suave
                     family='Arial, sans-serif'
                 )
             )
