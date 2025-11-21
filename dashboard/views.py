@@ -10,10 +10,11 @@ from .visualizations.sales.plot import create_sales_trend_plot
 from .visualizations.products.plot import create_top_products_plot
 from .visualizations.shared.data_loader import load_online_retail_data
 from .visualizations.client_similarity.data_processor import (
-    compute_client_similarity_graph, 
+    compute_client_similarity_graph,
     get_all_customer_ids
 )
 from .visualizations.client_similarity.plot import create_client_similarity_plot
+from .visualizations.products.data_processor import get_categories_and_subcategories
 import polars as pl
 
 @ensure_csrf_cookie
@@ -149,15 +150,19 @@ def get_top_products(request):
     customer_profile = request.GET.get('profile', None)
     start_date = request.GET.get('start_date', None)
     end_date = request.GET.get('end_date', None)
-    
-    print(f"DEBUG - get_top_products: country={country}, profile={customer_profile}, dates={start_date} to {end_date}")
-    
+    category = request.GET.get('category', None)
+    subcategory = request.GET.get('subcategory', None)
+
+    print(f"DEBUG - get_top_products: country={country}, profile={customer_profile}, dates={start_date} to {end_date}, category={category}, subcategory={subcategory}")
+
     # Crear el gráfico con los filtros aplicados
     top_products_fig = create_top_products_plot(
-        country=country, 
+        country=country,
         customer_profile=customer_profile,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        category=category,
+        subcategory=subcategory
     )
     
     # Convertir a JSON
@@ -268,7 +273,7 @@ def get_customer_ids(request):
         country = request.GET.get('country', None)
         start_date = request.GET.get('start_date', None)
         end_date = request.GET.get('end_date', None)
-        
+
         customer_ids = get_all_customer_ids(
             country=country,
             start_date=start_date,
@@ -280,5 +285,17 @@ def get_customer_ids(request):
         })
     except Exception as e:
         print(f"Error en get_customer_ids: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_categories(request):
+    """
+    API endpoint para obtener categorías y subcategorías disponibles
+    """
+    try:
+        data = get_categories_and_subcategories()
+        return JsonResponse(data)
+    except Exception as e:
+        print(f"Error en get_categories: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 

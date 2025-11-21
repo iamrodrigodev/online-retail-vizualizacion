@@ -87,9 +87,24 @@ body {
 
 /* Contenedor para el gráfico de ventas (ancho completo) */
 .sales-trend-container {
-    max-width: 1600px;
-    margin: 20px auto 0;
+    max-width: 1400px;
+    margin: 20px auto;
     width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+}
+
+/* Contenedor para el gráfico de productos (ancho completo) */
+.products-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
 }
 
 /* Cards individuales para cada gráfico */
@@ -100,16 +115,21 @@ body {
     background: white;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    padding: 12px; /* reducir padding para ganar altura útil */
+    padding: 12px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-sizing: border-box;
-}
-
-/* Evitar overflow en flex items: permitir que los children se encojan correctamente */
-.chart-card {
     min-width: 0;
     display: flex;
     flex-direction: column;
+}
+
+/* Chart cards dentro de sales y products containers deben ocupar casi todo el ancho */
+.sales-trend-container > .chart-card,
+.products-container > .chart-card {
+    flex: 1 1 100% !important;
+    max-width: calc(90% + 12px) !important;
+    width: calc(90% + 12px) !important;
+    min-height: 600px !important;
 }
 
 .chart-card.full-width {
@@ -272,9 +292,8 @@ h1 {
 /* Estilos para los gráficos */
 .plotly-chart {
     width: 100% !important;
-    height: 360px !important; /* altura base reducida */
-    box-sizing: border-box; /* asegurar padding/border dentro del ancho */
-    overflow: hidden; /* prevenir que elementos (labels fuera) salgan del card */
+    box-sizing: border-box;
+    flex: 1 1 auto;
 }
 
 #worldMap {
@@ -286,11 +305,13 @@ h1 {
 }
 
 #salesTrend {
-    height: 320px !important;
+    height: 100% !important;
+    min-height: 500px !important;
 }
 
 #topProducts {
-    height: 320px !important;
+    height: 100% !important;
+    min-height: 500px !important;
 }
 
 /* Forzar cursor pointer en las barras del gráfico de perfiles */
@@ -920,10 +941,80 @@ input[type="number"].form-control::-webkit-inner-spin-button {
     .dashboard-layout {
         flex-direction: column;
     }
-    
+
     .main-charts-column,
     .client-similarity-container {
         flex: 1 1 100%;
         max-width: 100%;
+    }
+}
+
+/* ===============================
+   CONTROLES ESTILO PLOTLY PARA PRODUCTOS
+   =============================== */
+
+.product-filter-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.plotly-dropdown {
+    background-color: white;
+    border: 2px solid #0824a4;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+    color: #2c3e50;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.plotly-dropdown:hover:not(:disabled) {
+    background-color: #f8f9fa;
+    border-color: #0618c7;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.plotly-dropdown:focus {
+    border-color: #0618c7;
+    box-shadow: 0 0 0 2px rgba(8, 36, 164, 0.2);
+}
+
+.plotly-dropdown:disabled {
+    background-color: #f0f0f0;
+    border-color: #cccccc;
+    color: #999999;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.plotly-dropdown option {
+    padding: 6px;
+    background-color: white;
+    color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+    .plotly-style-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .plotly-dropdown {
+        min-width: 150px;
+        font-size: 11px;
+        padding: 5px 10px;
     }
 }

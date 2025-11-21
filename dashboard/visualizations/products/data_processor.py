@@ -15,20 +15,22 @@ def detectar_outliers_iqr(df, columna):
     return lower_bound, upper_bound
 
 
-def get_top_products_data(country=None, customer_profile=None, start_date=None, end_date=None):
+def get_top_products_data(country=None, customer_profile=None, start_date=None, end_date=None, category=None, subcategory=None):
     """
     Obtiene los datos del Top 5 de productos más vendidos.
-    
+
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
         start_date: Fecha de inicio en formato YYYY-MM (opcional)
         end_date: Fecha de fin en formato YYYY-MM (opcional)
-    
+        category: Categoría para filtrar (opcional)
+        subcategory: Subcategoría para filtrar (opcional)
+
     Returns:
         dict con datos de productos más vendidos
     """
-    print(f"DEBUG - get_top_products_data: country={country}, profile={customer_profile}, dates={start_date} to {end_date}")
+    print(f"DEBUG - get_top_products_data: country={country}, profile={customer_profile}, dates={start_date} to {end_date}, category={category}, subcategory={subcategory}")
     
     df = load_online_retail_data()
     
@@ -93,7 +95,18 @@ def get_top_products_data(country=None, customer_profile=None, start_date=None, 
         
         # Filtrar por el perfil especificado
         df = df.filter(pl.col('Perfil') == customer_profile)
-    
+        print(f"DEBUG - Después de filtrar por perfil {customer_profile}: {df.height} filas")
+
+    # Filtrar por categoría si se especifica
+    if category:
+        df = df.filter(pl.col('Category') == category)
+        print(f"DEBUG - Después de filtrar por categoría {category}: {df.height} filas")
+
+    # Filtrar por subcategoría si se especifica
+    if subcategory:
+        df = df.filter(pl.col('Subcategory') == subcategory)
+        print(f"DEBUG - Después de filtrar por subcategoría {subcategory}: {df.height} filas")
+
     # Calcular ventas totales por producto
     if 'Sales' not in df.columns:
         df = df.with_columns([
@@ -136,3 +149,38 @@ def get_top_products_data(country=None, customer_profile=None, start_date=None, 
     print(f"DEBUG - Retornando: {result}")
     
     return result
+
+
+def get_categories_and_subcategories():
+    """
+    Obtiene todas las categorías y subcategorías disponibles en el dataset.
+
+    Returns:
+        dict con estructura {
+            'categories': lista de categorías,
+            'subcategories_by_category': dict con subcategorías por categoría
+        }
+    """
+    df = load_online_retail_data()
+
+    if df is None or df.height == 0:
+        return {'categories': [], 'subcategories_by_category': {}}
+
+    # Obtener categorías únicas ordenadas
+    categories = df['Category'].unique().sort().to_list()
+
+    # Obtener subcategorías por categoría
+    subcategories_by_category = {}
+    for category in categories:
+        subcategories = (
+            df.filter(pl.col('Category') == category)['Subcategory']
+            .unique()
+            .sort()
+            .to_list()
+        )
+        subcategories_by_category[category] = subcategories
+
+    return {
+        'categories': categories,
+        'subcategories_by_category': subcategories_by_category
+    }

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const loader = document.getElementById('loader');
     const contentContainer = document.getElementById('content-container');
     const salesContainer = document.getElementById('sales-container');
+    const productsContainer = document.getElementById('products-container');
     const timeFilterContainer = document.getElementById('time-filter-container');
     const mapDiv = document.getElementById('worldMap');
     const profilesDiv = document.getElementById('customerProfiles');
@@ -16,6 +17,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedStartDate = null;
     let selectedEndDate = null;
     let allMonths = [];
+    // Variables para filtros de productos
+    let selectedCategory = null;
+    let selectedSubcategory = null;
     
     // Array de todos los países con datos (convertir Set a Array)
     const allCountries = Array.from(countriesWithData);
@@ -29,15 +33,61 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     const selectedColor = '#0824a4'; // Color La Salle para selección
 
-    if (mapDiv && profilesDiv && salesDiv && productsDiv && contentContainer && salesContainer && loader && 
-        timeFilterContainer &&
-        typeof Plotly !== 'undefined' && 
-        typeof worldMapData !== 'undefined' && 
+    if (mapDiv && profilesDiv && salesDiv && productsDiv && contentContainer && salesContainer &&
+        productsContainer && loader && timeFilterContainer &&
+        typeof Plotly !== 'undefined' &&
+        typeof worldMapData !== 'undefined' &&
         typeof customerProfilesData !== 'undefined' &&
         typeof salesTrendData !== 'undefined' &&
         typeof topProductsData !== 'undefined' &&
         typeof dateRange !== 'undefined') {
-        
+
+        // Función para generar el texto de rango con contexto (debe estar accesible globalmente)
+        function generateRangeText(graphType) {
+            const startSlider = document.getElementById('timeSliderStart');
+            const endSlider = document.getElementById('timeSliderEnd');
+
+            if (!startSlider || !endSlider) return '';
+
+            const startIdx = parseInt(startSlider.value);
+            const endIdx = parseInt(endSlider.value);
+            const max = parseInt(startSlider.max);
+
+            // Si el rango está en el máximo (todos los datos), no mostrar texto
+            if (startIdx === 0 && endIdx === max) {
+                return '';
+            }
+
+            const [startYear, startMonth] = allMonths[startIdx].split('-');
+            const [endYear, endMonth] = allMonths[endIdx].split('-');
+            const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+            const startMonthName = monthNames[parseInt(startMonth) - 1];
+            const endMonthName = monthNames[parseInt(endMonth) - 1];
+
+            let prefix = '';
+            if (graphType === 'sales') {
+                prefix = 'Ventas';
+            } else if (graphType === 'products') {
+                prefix = 'Productos';
+            } else if (graphType === 'profiles') {
+                prefix = 'Perfiles de Cliente';
+            }
+
+            // Agregar información de país si está seleccionado
+            if (selectedCountry) {
+                prefix += ` en ${selectedCountry}`;
+            }
+
+            // Agregar información de perfil si está seleccionado
+            if (selectedProfile && (graphType === 'sales' || graphType === 'products')) {
+                prefix += ` con perfil ${selectedProfile}`;
+            }
+
+            return `${prefix} desde ${startMonthName} del ${startYear} <strong>hasta</strong> ${endMonthName} del ${endYear}`;
+        }
+
         // Inicializar el filtro temporal
         function initializeTimeFilter() {
             if (!dateRange.min || !dateRange.max) {
@@ -153,52 +203,11 @@ document.addEventListener('DOMContentLoaded', function () {
             // Función para formatear fecha para mostrar
             function formatDateDisplay(dateStr) {
                 const [year, month] = dateStr.split('-');
-                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
                 return `${monthNames[parseInt(month) - 1]} ${year}`;
             }
-            
-            // Función para generar el texto de rango con contexto
-            function generateRangeText(graphType) {
-                const startIdx = parseInt(startSlider.value);
-                const endIdx = parseInt(endSlider.value);
-                const max = parseInt(startSlider.max);
-                
-                // Si el rango está en el máximo (todos los datos), no mostrar texto
-                if (startIdx === 0 && endIdx === max) {
-                    return '';
-                }
-                
-                const [startYear, startMonth] = allMonths[startIdx].split('-');
-                const [endYear, endMonth] = allMonths[endIdx].split('-');
-                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                
-                const startMonthName = monthNames[parseInt(startMonth) - 1];
-                const endMonthName = monthNames[parseInt(endMonth) - 1];
-                
-                let prefix = '';
-                if (graphType === 'sales') {
-                    prefix = 'Ventas';
-                } else if (graphType === 'products') {
-                    prefix = 'Productos';
-                } else if (graphType === 'profiles') {
-                    prefix = 'Perfiles de Cliente';
-                }
-                
-                // Agregar información de país si está seleccionado
-                if (selectedCountry) {
-                    prefix += ` en ${selectedCountry}`;
-                }
-                
-                // Agregar información de perfil si está seleccionado
-                if (selectedProfile && (graphType === 'sales' || graphType === 'products')) {
-                    prefix += ` con perfil ${selectedProfile}`;
-                }
-                
-                return `${prefix} desde ${startMonthName} del ${startYear} <strong>hasta</strong> ${endMonthName} del ${endYear}`;
-            }
-            
+
             // Función para actualizar etiquetas
             function updateLabels() {
                 const startIdx = parseInt(startSlider.value);
@@ -468,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Construir URL con parámetros
             let url = '/api/top-products/';
             const params = new URLSearchParams();
-            
+
             if (selectedCountry) {
                 params.append('country', selectedCountry);
             }
@@ -481,7 +490,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedEndDate) {
                 params.append('end_date', selectedEndDate);
             }
-            
+            if (selectedCategory) {
+                params.append('category', selectedCategory);
+            }
+            if (selectedSubcategory) {
+                params.append('subcategory', selectedSubcategory);
+            }
+
             if (params.toString()) {
                 url += '?' + params.toString();
             }
@@ -642,7 +657,8 @@ document.addEventListener('DOMContentLoaded', function () {
             loader.style.display = 'none';
             contentContainer.style.display = 'grid';
             salesContainer.style.display = 'block';
-            
+            productsContainer.style.display = 'block';
+
             // Inicializar el filtro temporal
             initializeTimeFilter();
             
@@ -1602,5 +1618,86 @@ document.addEventListener('DOMContentLoaded', function () {
     // Cargar IDs de clientes al iniciar
     if (similarityContainer) {
         loadCustomerIds();
+    }
+
+    // =============================
+    // FILTROS DE PRODUCTOS (CATEGORÍA Y SUBCATEGORÍA)
+    // =============================
+
+    const categoryFilter = document.getElementById('productCategoryFilter');
+    const subcategoryFilter = document.getElementById('productSubcategoryFilter');
+    let categoriesData = null;
+
+    // Cargar categorías desde el servidor
+    function loadProductCategories() {
+        fetch('/api/categories/')
+            .then(response => response.json())
+            .then(data => {
+                categoriesData = data;
+                populateCategoryFilter(data.categories);
+            })
+            .catch(error => {
+                console.error('Error al cargar categorías:', error);
+            });
+    }
+
+    // Poblar selector de categorías
+    function populateCategoryFilter(categories) {
+        if (!categoryFilter) return;
+
+        categoryFilter.innerHTML = '<option value="">Todas las categorías</option>';
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    }
+
+    // Manejar cambio en selector de categoría
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function() {
+            const category = categoryFilter.value;
+
+            if (category === '') {
+                // Sin categoría - deshabilitar subcategorías
+                subcategoryFilter.disabled = true;
+                subcategoryFilter.innerHTML = '<option value="">Todas las subcategorías</option>';
+                selectedCategory = null;
+                selectedSubcategory = null;
+            } else {
+                // Categoría seleccionada - habilitar y poblar subcategorías
+                selectedCategory = category;
+                selectedSubcategory = null;
+                subcategoryFilter.disabled = false;
+                subcategoryFilter.innerHTML = '<option value="">Todas las subcategorías</option>';
+
+                if (categoriesData && categoriesData.subcategories_by_category[category]) {
+                    categoriesData.subcategories_by_category[category].forEach(subcategory => {
+                        const option = document.createElement('option');
+                        option.value = subcategory;
+                        option.textContent = subcategory;
+                        subcategoryFilter.appendChild(option);
+                    });
+                }
+            }
+
+            // Actualizar gráfico
+            updateTopProducts();
+        });
+    }
+
+    // Manejar cambio en selector de subcategoría
+    if (subcategoryFilter) {
+        subcategoryFilter.addEventListener('change', function() {
+            selectedSubcategory = subcategoryFilter.value || null;
+            // Actualizar gráfico
+            updateTopProducts();
+        });
+    }
+
+    // Cargar categorías al iniciar
+    if (categoryFilter && subcategoryFilter) {
+        loadProductCategories();
     }
 });

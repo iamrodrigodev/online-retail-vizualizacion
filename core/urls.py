@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/customer-profiles-global/', views.get_customer_profiles_global, name='customer_profiles_global'),
     path('api/sales-trend/', views.get_sales_trend, name='sales_trend'),
     path('api/top-products/', views.get_top_products, name='top_products'),
+    path('api/categories/', views.get_categories, name='get_categories'),
     path('api/client-similarity/compute/', views.compute_client_similarity, name='compute_client_similarity'),
     path('api/client-similarity/customer-ids/', views.get_customer_ids, name='get_customer_ids'),
 ]

@@ -42,61 +42,12 @@
                 <p class="chart-date-range" id="customerProfilesDateRange"></p>
             </div>
         </div>
-        <!-- Gráfico de tendencia de ventas (ancho completo) -->
-        <div class="sales-trend-container" id="sales-container" style="display: none;">
-            <div class="charts-container">
-                <div class="chart-card">
-                    <div id="salesTrend" class="plotly-chart sales-chart"></div>
-                    <p class="chart-date-range" id="salesTrendDateRange"></p>
-                </div>
-                <div class="chart-card">
-                    <div id="topProducts" class="plotly-chart"></div>
-                    <p class="chart-date-range" id="topProductsDateRange"></p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Filtro Temporal Global -->
-        <div class="time-filter-container" id="time-filter-container" style="display: none;">
-            <div class="chart-card time-filter-card">
-                <h3 class="time-filter-title">Filtro Temporal</h3>
-                <p class="time-filter-description" id="timeFilterDescription"></p>
-                <div class="time-filter-content">
-                    <div class="time-filter-labels">
-                        <span class="time-filter-label" id="startDateLabel"></span>
-                        <span class="time-filter-label" id="endDateLabel"></span>
-                    </div>
-                    <div class="time-slider-wrapper">
-                        <div class="time-slider-ticks" id="timeSliderTicks"></div>
-                        <input 
-                            type="range" 
-                            id="timeSliderStart" 
-                            class="time-slider" 
-                            min="0" 
-                            max="100" 
-                            value="0"
-                        >
-                        <input 
-                            type="range" 
-                            id="timeSliderEnd" 
-                            class="time-slider" 
-                            min="0" 
-                            max="100" 
-                            value="100"
-                        >
-                    </div>
-                    <div class="time-filter-range">
-                        <span id="timeRangeDisplay"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
+
         <!-- Gráfico de Similitud de Clientes -->
         <div class="client-similarity-container" id="client-similarity-container" style="display: none;">
             <div class="chart-card">
                 <h3 class="chart-title">Análisis de Similitud de Clientes</h3>
-                
+
                 <!-- Panel de controles -->
                 <div class="similarity-controls" id="client_similarity_controls">
                     <div class="controls-row">
@@ -106,13 +57,13 @@
                                 <option value="">Todos los clientes</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="kNeighbors">K Vecinos:</label>
-                            <input type="number" id="kNeighbors" class="form-control" 
+                            <input type="number" id="kNeighbors" class="form-control"
                                    min="1" max="500" value="10">
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="normalization">Normalización:</label>
                             <select id="normalization" class="form-control">
@@ -120,7 +71,7 @@
                                 <option value="minmax_01">Min-Max [0,1]</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="metric">Métrica:</label>
                             <select id="metric" class="form-control">
@@ -129,23 +80,23 @@
                                 <option value="cosine">Coseno</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="dimred">Reducción Dim:</label>
                             <select id="dimred" class="form-control">
                                 <option value="pca" selected>PCA</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <button id="applyButton" class="btn-apply">APLICAR</button>
                         </div>
-                        
+
                         <div class="control-group">
                             <button id="resetButton" class="btn-reset">REINICIAR</button>
                         </div>
                     </div>
-                    
+
                     <!-- Selectores de Ejes -->
                     <div class="controls-row axis-selectors">
                         <div class="control-group">
@@ -161,7 +112,7 @@
                                 <option value="6">UniqueProducts (Productos únicos)</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="yAxisFeature">Eje Y (Vertical):</label>
                             <select id="yAxisFeature" class="form-control">
@@ -176,15 +127,76 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div id="similarityInfo" class="similarity-info" style="display: none;">
                         <p><strong>Total de clientes:</strong> <span id="totalCustomers">0</span></p>
                     </div>
                 </div>
-                
+
                 <!-- Contenedor del gráfico -->
                 <div id="client_similarity_graph" class="plotly-chart"></div>
                 <p class="chart-date-range" id="clientSimilarityDateRange"></p>
+            </div>
+        </div>
+
+        <!-- Gráfico de tendencia de ventas -->
+        <div class="sales-trend-container" id="sales-container" style="display: none;">
+            <div class="chart-card">
+                <div id="salesTrend" class="plotly-chart sales-chart"></div>
+                <p class="chart-date-range" id="salesTrendDateRange"></p>
+            </div>
+        </div>
+
+        <!-- Gráfico de top 5 productos -->
+        <div class="products-container" id="products-container" style="display: none;">
+            <div class="chart-card">
+                <!-- Controles de filtro -->
+                <div class="product-filter-controls">
+                    <select id="productCategoryFilter" class="plotly-dropdown">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                    <select id="productSubcategoryFilter" class="plotly-dropdown" disabled>
+                        <option value="">Todas las subcategorías</option>
+                    </select>
+                </div>
+                <div id="topProducts" class="plotly-chart"></div>
+                <p class="chart-date-range" id="topProductsDateRange"></p>
+            </div>
+        </div>
+
+        <!-- Filtro Temporal Global -->
+        <div class="time-filter-container" id="time-filter-container" style="display: none;">
+            <div class="chart-card time-filter-card">
+                <h3 class="time-filter-title">Filtro Temporal</h3>
+                <p class="time-filter-description" id="timeFilterDescription"></p>
+                <div class="time-filter-content">
+                    <div class="time-filter-labels">
+                        <span class="time-filter-label" id="startDateLabel"></span>
+                        <span class="time-filter-label" id="endDateLabel"></span>
+                    </div>
+                    <div class="time-slider-wrapper">
+                        <div class="time-slider-ticks" id="timeSliderTicks"></div>
+                        <input
+                            type="range"
+                            id="timeSliderStart"
+                            class="time-slider"
+                            min="0"
+                            max="100"
+                            value="0"
+                        >
+                        <input
+                            type="range"
+                            id="timeSliderEnd"
+                            class="time-slider"
+                            min="0"
+                            max="100"
+                            value="100"
+                        >
+                    </div>
+                    <div class="time-filter-range">
+                        <span id="timeRangeDisplay"></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

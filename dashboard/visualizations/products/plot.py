@@ -5,22 +5,24 @@ import plotly.graph_objects as go
 from dashboard.visualizations.products.data_processor import get_top_products_data
 
 
-def create_top_products_plot(country=None, customer_profile=None, start_date=None, end_date=None):
+def create_top_products_plot(country=None, customer_profile=None, start_date=None, end_date=None, category=None, subcategory=None):
     """
     Crea una figura de Plotly con el Top 5 de productos más vendidos.
-    
+
     Args:
         country: País para filtrar (opcional)
         customer_profile: Perfil de cliente para filtrar (opcional)
         start_date: Fecha de inicio en formato YYYY-MM (opcional)
         end_date: Fecha de fin en formato YYYY-MM (opcional)
-    
+        category: Categoría para filtrar (opcional)
+        subcategory: Subcategoría para filtrar (opcional)
+
     Returns:
         Figura de Plotly
     """
-    print(f"DEBUG - create_top_products_plot: country={country}, profile={customer_profile}, dates={start_date} to {end_date}")
-    
-    data = get_top_products_data(country, customer_profile, start_date, end_date)
+    print(f"DEBUG - create_top_products_plot: country={country}, profile={customer_profile}, dates={start_date} to {end_date}, category={category}, subcategory={subcategory}")
+
+    data = get_top_products_data(country, customer_profile, start_date, end_date, category, subcategory)
     
     print(f"DEBUG - data received: {data}")
     
@@ -127,7 +129,7 @@ def create_top_products_plot(country=None, customer_profile=None, start_date=Non
         },
         plot_bgcolor='white',
         paper_bgcolor='rgba(0,0,0,0)',
-        margin={"r": 80, "t": 110, "l": 180, "b": 60},
+        margin={"r": 80, "t": 60, "l": 180, "b": 60},
         hovermode='closest',
         dragmode=False,
         annotations=[
