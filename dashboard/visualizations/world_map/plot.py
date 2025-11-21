@@ -44,8 +44,8 @@ def create_world_map_plot():
         marker_line_color='white',
         marker_line_width=0.5,
         hoverinfo='location',
-        name='País seleccionado',
-        showlegend=True,
+        name='',  # Sin nombre en la leyenda
+        showlegend=False,  # Ocultar de la leyenda
         visible=True
     ))
 
