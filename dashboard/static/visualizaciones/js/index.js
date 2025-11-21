@@ -1444,35 +1444,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 borderwidth: 1,
                 font: { size: 11, color: '#2c3e50' }
             },
-            dragmode: 'pan',  // Habilitar movimiento/arrastre (como el mapa mundial)
+            dragmode: 'lasso',  // Modo lasso para selección de puntos (puede cambiar a 'select' para rectángulo)
             height: 700,
             margin: { l: 50, r: 200, t: 80, b: 50 }
         };
         
-        // Renderizar el gráfico con controles de zoom habilitados
+        // Renderizar el gráfico con controles de zoom y selección habilitados
         Plotly.newPlot(similarityGraph, traces, layout, {
             responsive: true,
             displayModeBar: true,
-            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            modeBarButtonsToRemove: [],  // Permitir lasso y select
             scrollZoom: true  // Habilitar zoom con scroll del mouse
         }).then(() => {
             // Forzar cursor pointer en todo el gráfico
             similarityGraph.style.cursor = 'pointer';
-            
+
             // Agregar cursor pointer a todos los puntos después de renderizar
             const svgLayer = similarityGraph.querySelector('.svg-container');
             if (svgLayer) {
                 svgLayer.style.cursor = 'pointer';
             }
-            
+
             // Forzar cursor en la capa de scatter
             const scatterLayers = similarityGraph.querySelectorAll('.scatterlayer');
             scatterLayers.forEach(layer => {
                 layer.style.cursor = 'pointer';
             });
-            
+
             // Actualizar el subtítulo con el rango de fechas
             updateClientSimilarityDateRange();
+
+            // Configurar eventos de selección de puntos
+            setupSimilaritySelectionEvents();
         });
         
         // Agregar evento de clic en puntos para seleccionar cliente
@@ -1521,6 +1524,183 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     
+    // =============================
+    // SELECCIÓN DE PUNTOS Y ACTUALIZACIÓN DEL MAPA
+    // =============================
+
+    // Función para configurar eventos de selección en el gráfico de similitud
+    function setupSimilaritySelectionEvents() {
+        // Remover eventos previos para evitar duplicados
+        similarityGraph.removeAllListeners('plotly_selected');
+        similarityGraph.removeAllListeners('plotly_deselect');
+
+        // Evento cuando el usuario SELECCIONA puntos (lasso o box)
+        similarityGraph.on('plotly_selected', function(eventData) {
+            if (!eventData || !eventData.points || eventData.points.length === 0) {
+                // No hay selección, resetear mapa
+                resetMapColors();
+                return;
+            }
+
+            // 1. Obtener países únicos de los puntos seleccionados
+            const selectedCountries = new Set();
+
+            eventData.points.forEach(point => {
+                // Buscar el país del punto en los datos actuales
+                if (currentSimilarityData && currentSimilarityData.embedding) {
+                    const pointData = currentSimilarityData.embedding.find(
+                        p => String(p.id) === String(point.customdata[0])
+                    );
+
+                    if (pointData && pointData.country) {
+                        selectedCountries.add(pointData.country);
+                    }
+                }
+            });
+
+            // 2. Obtener perfiles únicos de los puntos seleccionados
+            const selectedProfiles = new Set();
+
+            eventData.points.forEach(point => {
+                if (currentSimilarityData && currentSimilarityData.embedding) {
+                    const pointData = currentSimilarityData.embedding.find(
+                        p => String(p.id) === String(point.customdata[0])
+                    );
+
+                    if (pointData && pointData.customer_type) {
+                        selectedProfiles.add(pointData.customer_type);
+                    }
+                }
+            });
+
+            // 3. Actualizar mapa con países seleccionados
+            if (selectedCountries.size > 0) {
+                highlightCountriesInMap(Array.from(selectedCountries));
+                console.log(`${eventData.points.length} puntos seleccionados de ${selectedCountries.size} países: ${Array.from(selectedCountries).join(', ')}`);
+            }
+
+            // 4. Actualizar gráfico de perfiles con perfiles involucrados
+            if (selectedProfiles.size > 0) {
+                highlightProfilesInChart(Array.from(selectedProfiles));
+                console.log(`Perfiles involucrados: ${Array.from(selectedProfiles).join(', ')}`);
+            }
+        });
+
+        // Evento cuando el usuario DESELECCIONA (click en área vacía o doble click)
+        similarityGraph.on('plotly_deselect', function() {
+            resetMapColors();
+            resetProfileColors();
+            console.log('Selección limpiada, mapa y perfiles reseteados');
+        });
+    }
+
+    // Función para resaltar países en el mapa (Choropleth usa z y colorscale, no marker.color)
+    function highlightCountriesInMap(selectedCountries) {
+        // Filtrar el país seleccionado por click (si existe) de la lista general
+        const countriesForTrace0 = allCountries.filter(c => c !== selectedCountry);
+
+        // Crear array de valores z para trace 0 (países sin el seleccionado)
+        // z=1 para gris, z=2 para naranja
+        const zValues = countriesForTrace0.map(country => {
+            return selectedCountries.includes(country) ? 2 : 1;
+        });
+
+        // Colorscale: [0-1] = gris, [1-2] = naranja
+        const colorscale = [
+            [0, '#6c757d'],    // Gris para z=1
+            [0.5, '#6c757d'],  // Gris hasta z=1
+            [0.5, '#FF5722'],  // Naranja desde z=1
+            [1, '#FF5722']     // Naranja hasta z=2
+        ];
+
+        // Actualizar trace 0 (países generales)
+        Plotly.restyle(mapDiv, {
+            'z': [zValues],
+            'colorscale': [colorscale]
+        }, [0]);
+
+        // Si hay un país seleccionado por click, verificar si está en los seleccionados
+        if (selectedCountry) {
+            // Si el país clickeado está en la selección, pintarlo naranja; si no, mantener azul
+            if (selectedCountries.includes(selectedCountry)) {
+                Plotly.restyle(mapDiv, {
+                    'colorscale': [[[0, '#FF5722'], [1, '#FF5722']]]
+                }, [1]);
+            } else {
+                Plotly.restyle(mapDiv, {
+                    'colorscale': [[[0, '#0824a4'], [1, '#0824a4']]]
+                }, [1]);
+            }
+        }
+    }
+
+    // Función para resetear colores del mapa (volver a estado según selección de país)
+    function resetMapColors() {
+        // Filtrar el país seleccionado por click (si existe)
+        const countriesForTrace0 = allCountries.filter(c => c !== selectedCountry);
+
+        // Todos los países en gris para trace 0 (z=1)
+        const zValues = countriesForTrace0.map(() => 1);
+        const colorscale = [[0, '#6c757d'], [1, '#6c757d']];
+
+        Plotly.restyle(mapDiv, {
+            'z': [zValues],
+            'colorscale': [colorscale]
+        }, [0]);
+
+        // Si hay un país seleccionado por click, mantenerlo en azul
+        if (selectedCountry) {
+            Plotly.restyle(mapDiv, {
+                'colorscale': [[[0, '#0824a4'], [1, '#0824a4']]]
+            }, [1]);
+        }
+    }
+
+    // Función para resaltar perfiles en el gráfico de perfiles de clientes
+    function highlightProfilesInChart(selectedProfiles) {
+        if (!profilesDiv || !profilesDiv.data || !profilesDiv.data[0]) return;
+
+        const currentData = profilesDiv.data[0];
+        const profiles = currentData.x;
+
+        // Crear array de colores: naranja para involucrados, color original para el resto
+        const colors = profiles.map(profile => {
+            if (selectedProfiles.includes(profile)) {
+                return '#FF5722'; // Naranja para perfiles involucrados
+            } else {
+                // Mantener color original del perfil
+                return profileColors[profile] || '#6c757d';
+            }
+        });
+
+        // Actualizar colores de las barras
+        Plotly.restyle(profilesDiv, {
+            'marker.color': [colors]
+        }, [0]);
+    }
+
+    // Función para resetear colores del gráfico de perfiles
+    function resetProfileColors() {
+        if (!profilesDiv || !profilesDiv.data || !profilesDiv.data[0]) return;
+
+        const currentData = profilesDiv.data[0];
+        const profiles = currentData.x;
+
+        // Restaurar colores originales
+        const colors = profiles.map(profile => {
+            // Si hay un perfil seleccionado por click, mantener el color azul La Salle
+            if (selectedProfile === profile) {
+                return selectedColor; // '#0824a4'
+            } else {
+                return profileColors[profile] || '#6c757d';
+            }
+        });
+
+        Plotly.restyle(profilesDiv, {
+            'marker.color': [colors]
+        }, [0]);
+    }
+
     // Función auxiliar para obtener el CSRF token
     function getCookie(name) {
         let cookieValue = null;
@@ -1552,15 +1732,24 @@ document.addEventListener('DOMContentLoaded', function () {
         dimred.value = defaultSimilaritySettings.dimred;
         document.getElementById('xAxisFeature').value = defaultSimilaritySettings.xAxisFeature;
         document.getElementById('yAxisFeature').value = defaultSimilaritySettings.yAxisFeature;
-        
+
         // Deshabilitar K
         kNeighbors.disabled = true;
         kNeighbors.style.backgroundColor = '#e0e0e0';
         kNeighbors.style.cursor = 'not-allowed';
-        
+
         // Limpiar caché para forzar recarga
         similarityGraphCache = {};
-        
+
+        // Limpiar selección de puntos en el gráfico (deseleccionar visualmente)
+        if (similarityGraph) {
+            Plotly.restyle(similarityGraph, {'selectedpoints': [null]});
+        }
+
+        // Resetear mapa y perfiles
+        resetMapColors();
+        resetProfileColors();
+
         // Actualizar gráfico
         updateSimilarityGraph();
     }
