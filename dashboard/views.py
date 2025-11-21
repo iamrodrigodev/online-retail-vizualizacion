@@ -299,3 +299,154 @@ def get_categories(request):
         print(f"Error en get_categories: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
+
+@require_http_methods(["POST"])
+def get_products_by_customers(request):
+    """
+    API endpoint para obtener el Top 5 de productos comprados por una lista de clientes
+    Retorna un gráfico completo de Plotly
+    """
+    import sys
+    try:
+        # Parsear datos JSON del body
+        data = json.loads(request.body)
+        customer_ids = data.get('customer_ids', [])
+
+        print(f"CustomerIDs recibidos: {customer_ids[:5]}...", file=sys.stderr)
+
+        if not customer_ids:
+            return JsonResponse({'error': 'No se proporcionaron CustomerIDs'}, status=400)
+
+        # Convertir customer_ids a strings en el mismo formato que el dataset
+        customer_ids_str = []
+        for cid in customer_ids:
+            try:
+                # Convertir a int primero (para limpiar), luego a string
+                customer_ids_str.append(str(int(float(str(cid)))))
+            except (ValueError, TypeError):
+                print(f"Error convirtiendo CustomerID: {cid}", file=sys.stderr)
+                continue
+
+        print(f"CustomerIDs convertidos: {customer_ids_str[:5]}...", file=sys.stderr)
+
+        # Cargar datos
+        df = load_online_retail_data()
+
+        if df.is_empty():
+            return JsonResponse({'error': 'No hay datos disponibles'}, status=404)
+
+        print(f"Dataset cargado, shape: {df.shape}", file=sys.stderr)
+        print(f"CustomerID type en dataset: {df['CustomerID'].dtype}", file=sys.stderr)
+
+        # Convertir CustomerID del dataset: String -> Float -> Int -> String (para remover .0)
+        df = df.with_columns([
+            pl.col('CustomerID').cast(pl.Float64).cast(pl.Int64).cast(pl.Utf8).alias('CustomerID')
+        ])
+
+        print(f"CustomerID convertido a string en dataset (sin .0)", file=sys.stderr)
+
+        # Filtrar por CustomerIDs usando comparación de strings
+        df_filtered = df.filter(
+            (pl.col('CustomerID').is_not_null()) &
+            (pl.col('CustomerID').is_in(customer_ids_str)) &
+            (pl.col('Description').is_not_null()) &
+            (pl.col('Description') != '') &
+            (pl.col('Quantity') > 0)
+        )
+
+        print(f"Filas después de filtrar: {df_filtered.height}", file=sys.stderr)
+
+        if df_filtered.is_empty():
+            print(f"No hay productos. Verificando CustomerIDs en dataset...", file=sys.stderr)
+            unique_customers = df.filter(pl.col('CustomerID').is_not_null())['CustomerID'].unique().to_list()
+            print(f"CustomerIDs únicos en dataset (primeros 10): {unique_customers[:10]}", file=sys.stderr)
+            return JsonResponse({'error': 'No hay productos para los clientes seleccionados'}, status=404)
+
+        # Calcular Top 5 productos por cantidad total vendida
+        top_products = df_filtered.group_by('Description').agg([
+            pl.col('Quantity').sum().alias('TotalQuantity')
+        ]).sort('TotalQuantity', descending=True).head(5)
+
+        if top_products.is_empty():
+            return JsonResponse({'error': 'No hay productos disponibles'}, status=404)
+
+        # Extraer datos para el gráfico
+        products = top_products['Description'].to_list()
+        quantities = top_products['TotalQuantity'].to_list()
+
+        # Crear gráfico de barras horizontales (como el original)
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=quantities,
+            y=products,
+            orientation='h',
+            marker=dict(color='#FF5722'),  # Naranja para indicar que es filtrado
+            text=[f'{q:,}' for q in quantities],
+            textposition='outside',
+            hovertemplate='<b>%{y}</b><br>Cantidad: %{x:,}<extra></extra>'
+        ))
+
+        # Calcular total de cantidad vendida
+        total_quantity = sum(quantities)
+
+        # Layout del gráfico
+        fig.update_layout(
+            title={
+                'text': f'Productos Más Comprados por {len(customer_ids)} Clientes Seleccionados',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': {'size': 18, 'color': '#FF5722', 'family': 'Arial, sans-serif'}
+            },
+            xaxis=dict(
+                title='Cantidad Vendida',
+                showgrid=True,
+                gridcolor='rgba(200, 200, 200, 0.2)'
+            ),
+            yaxis=dict(
+                title='',
+                autorange='reversed'
+            ),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=200, r=50, t=100, b=50),  # Aumentado margen superior de 80 a 100
+            height=400,
+            annotations=[
+                dict(
+                    text=f'Total vendido: {total_quantity:,} unidades',
+                    xref='paper',
+                    yref='paper',
+                    x=0.5,
+                    y=1.05,  # Ajustado de 1.08 a 1.05 para evitar solapamiento
+                    xanchor='center',
+                    yanchor='bottom',
+                    showarrow=False,
+                    font=dict(
+                        size=11,
+                        color='#666666',
+                        family='Arial, sans-serif'
+                    )
+                )
+            ]
+        )
+
+        # Convertir a JSON
+        graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+        return JsonResponse({
+            'graph': graph_json,
+            'total_products': len(products),
+            'total_customers': len(customer_ids)
+        })
+
+    except json.JSONDecodeError as e:
+        print(f"ERROR JSON en get_products_by_customers: {e}")
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        print(f"Error en get_products_by_customers: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+

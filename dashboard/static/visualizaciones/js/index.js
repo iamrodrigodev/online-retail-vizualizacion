@@ -500,18 +500,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (params.toString()) {
                 url += '?' + params.toString();
             }
-            
+
             // Hacer petición al servidor
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const graphData = JSON.parse(data.graph);
-                    
+
                     Plotly.react(productsDiv, graphData.data, graphData.layout, {
                         responsive: true,
                         displayModeBar: false,
                         staticPlot: true
                     }).then(function() {
+                        // Guardar estado actualizado como el nuevo "original"
+                        originalProductsGraph = {
+                            data: JSON.parse(JSON.stringify(graphData.data)),
+                            layout: JSON.parse(JSON.stringify(graphData.layout))
+                        };
+
                         // Actualizar el texto de rango de fecha
                         if (topProductsDateRange) {
                             topProductsDateRange.innerHTML = generateRangeText('products');
@@ -651,6 +657,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 responsive: true,
                 displayModeBar: false,
                 staticPlot: true
+            }).then(function() {
+                // Guardar estado original del gráfico de productos
+                originalProductsGraph = {
+                    data: JSON.parse(JSON.stringify(topProductsData.data)),
+                    layout: JSON.parse(JSON.stringify(topProductsData.layout))
+                };
             });
         }).then(function() {
             // Una vez que todos los gráficos se han renderizado, oculta el loader y muestra el contenido
@@ -884,6 +896,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let customerIdsCache = null; // Cache para IDs de clientes
     let isLoadingCustomerIds = false; // Estado de carga
     let similarityGraphCache = {}; // Cache para diferentes configuraciones del gráfico
+    let originalProductsGraph = null; // Guardar estado original del gráfico de productos
     
     // Valores iniciales por defecto
     const defaultSimilaritySettings = {
@@ -1584,13 +1597,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 highlightProfilesInChart(Array.from(selectedProfiles));
                 console.log(`Perfiles involucrados: ${Array.from(selectedProfiles).join(', ')}`);
             }
+
+            // 5. Obtener CustomerIDs seleccionados y buscar productos
+            const selectedCustomerIds = eventData.points.map(point => point.customdata[0]);
+
+            if (selectedCustomerIds.length > 0) {
+                fetchProductsByCustomers(selectedCustomerIds);
+            }
         });
 
         // Evento cuando el usuario DESELECCIONA (click en área vacía o doble click)
         similarityGraph.on('plotly_deselect', function() {
             resetMapColors();
             resetProfileColors();
-            console.log('Selección limpiada, mapa y perfiles reseteados');
+            resetProductColors();
+            console.log('Selección limpiada, mapa, perfiles y productos reseteados');
         });
     }
 
@@ -1701,6 +1722,68 @@ document.addEventListener('DOMContentLoaded', function () {
         }, [0]);
     }
 
+    // Función para obtener y mostrar Top 5 productos de clientes seleccionados
+    function fetchProductsByCustomers(customerIds) {
+        console.log('fetchProductsByCustomers llamada con', customerIds.length, 'clientes');
+
+        // Hacer petición POST al backend
+        fetch('/api/products-by-customers/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                customer_ids: customerIds
+            })
+        })
+        .then(response => {
+            console.log('Respuesta recibida:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+
+            if (data.error) {
+                console.error('Error al obtener productos:', data.error);
+                resetProductColors();
+                return;
+            }
+
+            if (data.graph) {
+                console.log('Reemplazando gráfico de productos...');
+                // Reemplazar gráfico completo con Top 5 de clientes seleccionados
+                const newGraphData = JSON.parse(data.graph);
+                Plotly.react(productsDiv, newGraphData.data, newGraphData.layout, {
+                    responsive: true,
+                    displayModeBar: false,
+                    staticPlot: true
+                }).then(() => {
+                    console.log('Gráfico de productos actualizado exitosamente');
+                });
+                console.log(`Top 5 productos de ${data.total_customers} clientes seleccionados`);
+            } else {
+                console.warn('No se recibió gráfico en la respuesta');
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener productos:', error);
+            resetProductColors();
+        });
+    }
+
+    // Función para resetear el gráfico de productos al estado original
+    function resetProductColors() {
+        if (!productsDiv || !originalProductsGraph) return;
+
+        // Restaurar gráfico original completo
+        Plotly.react(productsDiv, originalProductsGraph.data, originalProductsGraph.layout, {
+            responsive: true,
+            displayModeBar: false,
+            staticPlot: true
+        });
+    }
+
     // Función auxiliar para obtener el CSRF token
     function getCookie(name) {
         let cookieValue = null;
@@ -1746,9 +1829,10 @@ document.addEventListener('DOMContentLoaded', function () {
             Plotly.restyle(similarityGraph, {'selectedpoints': [null]});
         }
 
-        // Resetear mapa y perfiles
+        // Resetear mapa, perfiles y productos
         resetMapColors();
         resetProfileColors();
+        resetProductColors();
 
         // Actualizar gráfico
         updateSimilarityGraph();

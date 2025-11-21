@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/categories/', views.get_categories, name='get_categories'),
     path('api/client-similarity/compute/', views.compute_client_similarity, name='compute_client_similarity'),
     path('api/client-similarity/customer-ids/', views.get_customer_ids, name='get_customer_ids'),
+    path('api/products-by-customers/', views.get_products_by_customers, name='products_by_customers'),
 ]
