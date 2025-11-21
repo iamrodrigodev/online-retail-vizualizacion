@@ -311,8 +311,11 @@ def get_products_by_customers(request):
         # Parsear datos JSON del body
         data = json.loads(request.body)
         customer_ids = data.get('customer_ids', [])
+        category = data.get('category', None)
+        subcategory = data.get('subcategory', None)
 
         print(f"CustomerIDs recibidos: {customer_ids[:5]}...", file=sys.stderr)
+        print(f"Filtros: category={category}, subcategory={subcategory}", file=sys.stderr)
 
         if not customer_ids:
             return JsonResponse({'error': 'No se proporcionaron CustomerIDs'}, status=400)
@@ -346,13 +349,25 @@ def get_products_by_customers(request):
         print(f"CustomerID convertido a string en dataset (sin .0)", file=sys.stderr)
 
         # Filtrar por CustomerIDs usando comparación de strings
-        df_filtered = df.filter(
-            (pl.col('CustomerID').is_not_null()) &
-            (pl.col('CustomerID').is_in(customer_ids_str)) &
-            (pl.col('Description').is_not_null()) &
-            (pl.col('Description') != '') &
+        filters = [
+            (pl.col('CustomerID').is_not_null()),
+            (pl.col('CustomerID').is_in(customer_ids_str)),
+            (pl.col('Description').is_not_null()),
+            (pl.col('Description') != ''),
             (pl.col('Quantity') > 0)
-        )
+        ]
+
+        # Agregar filtros de categoría si existen
+        if category:
+            filters.append(pl.col('Category') == category)
+            print(f"Filtro de categoría aplicado: {category}", file=sys.stderr)
+
+        if subcategory:
+            filters.append(pl.col('Subcategory') == subcategory)
+            print(f"Filtro de subcategoría aplicado: {subcategory}", file=sys.stderr)
+
+        # Aplicar todos los filtros
+        df_filtered = df.filter(pl.all_horizontal(filters))
 
         print(f"Filas después de filtrar: {df_filtered.height}", file=sys.stderr)
 
@@ -392,10 +407,22 @@ def get_products_by_customers(request):
         # Calcular total de cantidad vendida
         total_quantity = sum(quantities)
 
+        # Construir título dinámico
+        title_parts = []
+        if category and subcategory:
+            title_parts.append(f'{subcategory}')
+        elif category:
+            title_parts.append(f'{category}')
+
+        if title_parts:
+            title_text = f'{" - ".join(title_parts)}: Top Compras de {len(customer_ids)} Clientes'
+        else:
+            title_text = f'Productos Más Comprados por {len(customer_ids)} Clientes Seleccionados'
+
         # Layout del gráfico
         fig.update_layout(
             title={
-                'text': f'Productos Más Comprados por {len(customer_ids)} Clientes Seleccionados',
+                'text': title_text,
                 'x': 0.5,
                 'xanchor': 'center',
                 'font': {'size': 18, 'color': '#FF5722', 'family': 'Arial, sans-serif'}

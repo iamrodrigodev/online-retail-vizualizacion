@@ -474,6 +474,14 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Función para actualizar el gráfico de top productos
         function updateTopProducts() {
+            // Si hay clientes seleccionados, actualizar con esos clientes
+            if (selectedCustomerIds.length > 0) {
+                console.log('Manteniendo selección de clientes con nuevos filtros');
+                fetchProductsByCustomers(selectedCustomerIds);
+                return;
+            }
+
+            // Si no hay clientes seleccionados, actualizar normalmente
             // Construir URL con parámetros
             let url = '/api/top-products/';
             const params = new URLSearchParams();
@@ -897,6 +905,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isLoadingCustomerIds = false; // Estado de carga
     let similarityGraphCache = {}; // Cache para diferentes configuraciones del gráfico
     let originalProductsGraph = null; // Guardar estado original del gráfico de productos
+    let selectedCustomerIds = []; // CustomerIDs actualmente seleccionados
     
     // Valores iniciales por defecto
     const defaultSimilaritySettings = {
@@ -1457,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 borderwidth: 1,
                 font: { size: 11, color: '#2c3e50' }
             },
-            dragmode: 'lasso',  // Modo lasso para selección de puntos (puede cambiar a 'select' para rectángulo)
+            dragmode: 'pan',  // Pan por defecto para navegar. Usa los botones de la barra para lasso/box select
             height: 700,
             margin: { l: 50, r: 200, t: 80, b: 50 }
         };
@@ -1599,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // 5. Obtener CustomerIDs seleccionados y buscar productos
-            const selectedCustomerIds = eventData.points.map(point => point.customdata[0]);
+            selectedCustomerIds = eventData.points.map(point => point.customdata[0]);
 
             if (selectedCustomerIds.length > 0) {
                 fetchProductsByCustomers(selectedCustomerIds);
@@ -1608,6 +1617,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Evento cuando el usuario DESELECCIONA (click en área vacía o doble click)
         similarityGraph.on('plotly_deselect', function() {
+            selectedCustomerIds = []; // Limpiar CustomerIDs seleccionados
             resetMapColors();
             resetProfileColors();
             resetProductColors();
@@ -1726,6 +1736,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function fetchProductsByCustomers(customerIds) {
         console.log('fetchProductsByCustomers llamada con', customerIds.length, 'clientes');
 
+        // Obtener filtros actuales de categoría/subcategoría
+        const category = selectedCategory || null;
+        const subcategory = selectedSubcategory || null;
+
         // Hacer petición POST al backend
         fetch('/api/products-by-customers/', {
             method: 'POST',
@@ -1734,7 +1748,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                customer_ids: customerIds
+                customer_ids: customerIds,
+                category: category,
+                subcategory: subcategory
             })
         })
         .then(response => {
@@ -1828,6 +1844,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (similarityGraph) {
             Plotly.restyle(similarityGraph, {'selectedpoints': [null]});
         }
+
+        // Limpiar CustomerIDs seleccionados
+        selectedCustomerIds = [];
 
         // Resetear mapa, perfiles y productos
         resetMapColors();
