@@ -230,9 +230,12 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
             pc1_importance = np.abs(components[0])
             pc1_top_indices = np.argsort(pc1_importance)[::-1][:3]
             pc1_top_features = [feature_names[i] for i in pc1_top_indices]
-            pc2_importance = np.abs(components[1])
-            pc2_top_indices = np.argsort(pc2_importance)[::-1][:3]
-            pc2_top_features = [feature_names[i] for i in pc2_top_indices]
+            if len(components) > 1:
+                pc2_importance = np.abs(components[1])
+                pc2_top_indices = np.argsort(pc2_importance)[::-1][:3]
+                pc2_top_features = [feature_names[i] for i in pc2_top_indices]
+            else:
+                pc2_top_features = None
             use_pca = True
         else:
             # Usar características seleccionadas directamente
@@ -251,10 +254,13 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
         pc1_top_indices = np.argsort(pc1_importance)[::-1][:3]
         pc1_top_features = [feature_names[i] for i in pc1_top_indices]
         
-        # Para PC2 (segunda fila): encontrar las 3 características más influyentes  
-        pc2_importance = np.abs(components[1])
-        pc2_top_indices = np.argsort(pc2_importance)[::-1][:3]
-        pc2_top_features = [feature_names[i] for i in pc2_top_indices]
+        # Para PC2 (segunda fila): encontrar las 3 características más influyentes (si existe)
+        if len(components) > 1:
+            pc2_importance = np.abs(components[1])
+            pc2_top_indices = np.argsort(pc2_importance)[::-1][:3]
+            pc2_top_features = [feature_names[i] for i in pc2_top_indices]
+        else:
+            pc2_top_features = None
         use_pca = True
     
     # 5. Clustering (usar 4 clusters para coincidir con los 4 tipos de cliente)
@@ -349,7 +355,7 @@ def compute_client_similarity_graph(customer_id=None, k=10, metric='euclidean',
         },
         'pca_variance': {
             'pc1_variance': float(explained_variance[0] * 100) if use_pca else None,
-            'pc2_variance': float(explained_variance[1] * 100) if use_pca else None,
+            'pc2_variance': float(explained_variance[1] * 100) if use_pca and len(explained_variance) > 1 else None,
             'total_variance': float(total_variance_explained) if use_pca else None,
             'pc1_features': pc1_top_features if use_pca else None,
             'pc2_features': pc2_top_features if use_pca else None
