@@ -130,6 +130,36 @@
 
                     <div id="similarityInfo" class="similarity-info" style="display: none;">
                         <p><strong>Total de clientes:</strong> <span id="totalCustomers">0</span></p>
+                        <p id="clusterIndicator" style="display: none; margin-top: 5px; font-weight: 600; color: #0824a4;"></p>
+                        <div class="cluster-selection">
+                            <p style="margin: 10px 0 5px 0; font-weight: 500; font-size: 14px;">Seleccionar por cluster:</p>
+                            <div class="cluster-buttons">
+                                <button class="cluster-btn cluster-0" data-cluster="0" title="Cluster 0">
+                                    <span class="cluster-number">0</span>
+                                    <span class="cluster-count" id="cluster-0-count">0</span>
+                                </button>
+                                <button class="cluster-btn cluster-1" data-cluster="1" title="Cluster 1">
+                                    <span class="cluster-number">1</span>
+                                    <span class="cluster-count" id="cluster-1-count">0</span>
+                                </button>
+                                <button class="cluster-btn cluster-2" data-cluster="2" title="Cluster 2">
+                                    <span class="cluster-number">2</span>
+                                    <span class="cluster-count" id="cluster-2-count">0</span>
+                                </button>
+                                <button class="cluster-btn cluster-3" data-cluster="3" title="Cluster 3">
+                                    <span class="cluster-number">3</span>
+                                    <span class="cluster-count" id="cluster-3-count">0</span>
+                                </button>
+                                <button class="cluster-btn cluster-4" data-cluster="4" title="Cluster 4">
+                                    <span class="cluster-number">4</span>
+                                    <span class="cluster-count" id="cluster-4-count">0</span>
+                                </button>
+                                <button class="cluster-btn all-clusters" data-cluster="all" title="Todos los Clusters">
+                                    <span class="cluster-icon">📦</span>
+                                    <span class="cluster-label">Todos</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -222,6 +252,9 @@
         </button>
         <button class="nav-btn" data-target="client-similarity-container" title="Análisis de Similitud">
             <span class="nav-icon">🔗</span>
+        </button>
+        <button class="nav-btn" data-target="time-filter-container" title="Filtro Temporal">
+            <span class="nav-icon">📅</span>
         </button>
         <button class="nav-btn scroll-top" title="Volver Arriba">
             <span class="nav-icon">⬆️</span>

@@ -854,6 +854,220 @@ input[type="number"].form-control::-webkit-inner-spin-button {
     color: var(--color-lasalle);
 }
 
+/* ===============================
+   BOTONES DE SELECCIÓN POR CLUSTER
+   =============================== */
+
+.cluster-selection {
+    margin-top: 15px;
+}
+
+.cluster-selection p {
+    margin: 10px 0 8px 0;
+    font-weight: 500;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.cluster-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.cluster-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 14px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 70px;
+}
+
+.cluster-btn:hover:not(.active) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.cluster-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.cluster-btn.active {
+    border-color: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    transform: scale(1.05);
+}
+
+/* Cluster 0 - Red */
+.cluster-btn.cluster-0 {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.cluster-btn.cluster-0:hover {
+    background: linear-gradient(135deg, #d62c1a 0%, #a93226 100%);
+}
+
+.cluster-btn.cluster-0.active {
+    background: linear-gradient(135deg, #c0392b 0%, #922b21 100%);
+}
+
+/* Cluster 1 - Blue */
+.cluster-btn.cluster-1 {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.cluster-btn.cluster-1:hover {
+    background: linear-gradient(135deg, #2e86c1 0%, #21618c 100%);
+}
+
+.cluster-btn.cluster-1.active {
+    background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
+}
+
+/* Cluster 2 - Green */
+.cluster-btn.cluster-2 {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.cluster-btn.cluster-2:hover {
+    background: linear-gradient(135deg, #28b463 0%, #1e8449 100%);
+}
+
+.cluster-btn.cluster-2.active {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+}
+
+/* Cluster 3 - Orange */
+.cluster-btn.cluster-3 {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.cluster-btn.cluster-3:hover {
+    background: linear-gradient(135deg, #dc7633 0%, #ca6f1e 100%);
+}
+
+.cluster-btn.cluster-3.active {
+    background: linear-gradient(135deg, #e67e22 0%, #ca6f1e 100%);
+}
+
+/* Cluster 4 - Purple */
+.cluster-btn.cluster-4 {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+}
+
+.cluster-btn.cluster-4:hover {
+    background: linear-gradient(135deg, #884ea0 0%, #7d3c98 100%);
+}
+
+.cluster-btn.cluster-4.active {
+    background: linear-gradient(135deg, #8e44ad 0%, #76448a 100%);
+}
+
+/* All Clusters Button */
+.cluster-btn.all-clusters {
+    background: linear-gradient(135deg, var(--color-lasalle) 0%, #0618c7 100%);
+}
+
+.cluster-btn.all-clusters:hover {
+    background: linear-gradient(135deg, #0618c7 0%, #050f8a 100%);
+}
+
+.cluster-btn.all-clusters.active {
+    background: linear-gradient(135deg, #0618c7 0%, #040c6f 100%);
+}
+
+/* Elements inside buttons */
+.cluster-number {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.cluster-count {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.9;
+    line-height: 1;
+}
+
+.cluster-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.cluster-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+/* Responsive para botones de cluster */
+@media (max-width: 768px) {
+    .cluster-buttons {
+        gap: 8px;
+    }
+
+    .cluster-btn {
+        padding: 8px 10px;
+        min-width: 60px;
+        font-size: 12px;
+    }
+
+    .cluster-number {
+        font-size: 16px;
+    }
+
+    .cluster-icon {
+        font-size: 18px;
+    }
+
+    .cluster-count,
+    .cluster-label {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cluster-buttons {
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .cluster-btn {
+        padding: 6px 8px;
+        min-width: 55px;
+        font-size: 11px;
+    }
+
+    .cluster-number {
+        font-size: 14px;
+    }
+
+    .cluster-icon {
+        font-size: 16px;
+    }
+
+    .cluster-count,
+    .cluster-label {
+        font-size: 9px;
+    }
+}
+
 #client_similarity_graph {
     min-height: 700px;
     cursor: pointer !important;

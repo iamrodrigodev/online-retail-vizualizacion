@@ -920,7 +920,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const defaultSimilaritySettings = {
         customerId: null,
         k: 10,
-        normalization: 'zscore',
+        normalization: 'minmax_01',
         metric: 'euclidean',
         dimred: 'pca',
         xAxisFeature: '',
@@ -1507,6 +1507,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Configurar eventos de selección de puntos
             setupSimilaritySelectionEvents();
+
+            // Actualizar contadores de clusters
+            updateClusterCounts();
         });
         
         // Agregar evento de clic en puntos para seleccionar cliente
@@ -1567,6 +1570,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Evento cuando el usuario SELECCIONA puntos (lasso o box)
         similarityGraph.on('plotly_selected', function(eventData) {
+            // Desactivar todos los botones de cluster cuando se usa selección manual
+            const clusterButtons = document.querySelectorAll('.cluster-btn');
+            clusterButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Ocultar indicador de cluster cuando se selecciona manualmente
+            const clusterIndicator = document.getElementById('clusterIndicator');
+            if (clusterIndicator) {
+                clusterIndicator.style.display = 'none';
+            }
+
             if (!eventData || !eventData.points || eventData.points.length === 0) {
                 // No hay selección, resetear mapa
                 resetMapColors();
@@ -1809,6 +1822,146 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // =============================
+    // SELECCIÓN POR CLUSTER
+    // =============================
+
+    // Función para poblar los contadores de clusters
+    function updateClusterCounts() {
+        if (!currentSimilarityData || !currentSimilarityData.embedding) {
+            return;
+        }
+
+        // Contar puntos por cluster
+        const clusterCounts = {};
+        currentSimilarityData.embedding.forEach(point => {
+            const clusterId = point.cluster;
+            clusterCounts[clusterId] = (clusterCounts[clusterId] || 0) + 1;
+        });
+
+        // Actualizar contadores en los botones
+        for (let i = 0; i <= 4; i++) {
+            const countSpan = document.getElementById(`cluster-${i}-count`);
+            if (countSpan) {
+                countSpan.textContent = clusterCounts[i] || 0;
+            }
+        }
+
+        console.log('Cluster counts updated:', clusterCounts);
+    }
+
+    // Función para seleccionar puntos de un cluster específico programáticamente
+    function selectClusterPoints(clusterNumber) {
+        if (!currentSimilarityData || !currentSimilarityData.embedding) {
+            console.warn('No hay datos de similitud disponibles');
+            return;
+        }
+
+        // Si clusterNumber es 'all', seleccionar todos los clusters
+        let pointsToSelect;
+        if (clusterNumber === 'all') {
+            pointsToSelect = currentSimilarityData.embedding;
+        } else {
+            // Filtrar puntos del cluster específico
+            pointsToSelect = currentSimilarityData.embedding.filter(
+                point => point.cluster === clusterNumber
+            );
+        }
+
+        if (pointsToSelect.length === 0) {
+            console.warn(`No hay puntos en el cluster ${clusterNumber}`);
+            return;
+        }
+
+        // Extraer CustomerIDs
+        const customerIds = pointsToSelect.map(point => point.id);
+
+        // Obtener países únicos
+        const countries = [...new Set(pointsToSelect.map(point => point.country).filter(Boolean))];
+
+        // Obtener perfiles únicos
+        const profiles = [...new Set(pointsToSelect.map(point => point.customer_type).filter(Boolean))];
+
+        // Actualizar visualizaciones
+        if (countries.length > 0) {
+            highlightCountriesInMap(countries);
+        }
+
+        if (profiles.length > 0) {
+            highlightProfilesInChart(profiles);
+        }
+
+        if (customerIds.length > 0) {
+            selectedCustomerIds = customerIds;
+            fetchProductsByCustomers(customerIds);
+        }
+
+        console.log(`Cluster ${clusterNumber} seleccionado: ${customerIds.length} clientes, ${countries.length} países, ${profiles.length} perfiles`);
+
+        // IMPORTANTE: Filtrar y regenerar el gráfico para mostrar SOLO el cluster seleccionado
+        const filteredData = {
+            ...currentSimilarityData,
+            embedding: pointsToSelect,
+            total_customers: pointsToSelect.length
+        };
+
+        const customerId = customerSelect.value || null;
+        const met = metric.value;
+        const norm = normalization.value;
+
+        // Regenerar gráfico con datos filtrados
+        renderSimilarityGraph(filteredData, customerId, met, norm);
+
+        // Actualizar contador de clientes en el indicador
+        totalCustomersSpan.textContent = pointsToSelect.length;
+    }
+
+    // Configurar event listeners para los botones de cluster
+    function setupClusterButtons() {
+        const clusterButtons = document.querySelectorAll('.cluster-btn');
+
+        clusterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const clusterValue = this.getAttribute('data-cluster');
+
+                // Actualizar estado activo de botones
+                clusterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                const clusterIndicator = document.getElementById('clusterIndicator');
+
+                if (clusterValue === 'all') {
+                    // Seleccionar todos los clusters
+                    if (clusterIndicator) {
+                        clusterIndicator.textContent = '📦 Visualizando: Todos los Clusters';
+                        clusterIndicator.style.display = 'block';
+                    }
+                    selectClusterPoints('all');
+                } else {
+                    // Seleccionar cluster específico (convertir a número)
+                    const clusterNum = parseInt(clusterValue, 10);
+
+                    // Actualizar indicador
+                    if (clusterIndicator) {
+                        const clusterColors = {
+                            0: { name: 'Cluster 0 (Rojo)', color: '#e74c3c' },
+                            1: { name: 'Cluster 1 (Azul)', color: '#3498db' },
+                            2: { name: 'Cluster 2 (Verde)', color: '#2ecc71' },
+                            3: { name: 'Cluster 3 (Naranja)', color: '#f39c12' },
+                            4: { name: 'Cluster 4 (Morado)', color: '#9b59b6' }
+                        };
+                        clusterIndicator.innerHTML = `<span style="color: ${clusterColors[clusterNum].color};">●</span> Visualizando: ${clusterColors[clusterNum].name}`;
+                        clusterIndicator.style.display = 'block';
+                    }
+
+                    selectClusterPoints(clusterNum);
+                }
+            });
+        });
+
+        console.log('Cluster buttons configurados');
+    }
+
     // Función auxiliar para obtener el CSRF token
     function getCookie(name) {
         let cookieValue = null;
@@ -1919,6 +2072,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Cargar IDs de clientes al iniciar
     if (similarityContainer) {
         loadCustomerIds();
+
+        // Configurar botones de cluster
+        setupClusterButtons();
     }
 
     // =============================
@@ -2043,24 +2199,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Array de secciones en orden
         const sections = [
-            'worldMap',
-            'customerProfiles',
-            'sales-container',
-            'products-container',
-            'client-similarity-container'
+            { id: 'content-container', buttons: ['worldMap', 'customerProfiles'] }, // Mapa y perfiles en la misma fila
+            { id: 'sales-container', buttons: ['sales-container'] },
+            { id: 'products-container', buttons: ['products-container', 'time-filter-container'] }, // Productos y filtro temporal juntos
+            { id: 'client-similarity-container', buttons: ['client-similarity-container'] },
+            { id: 'time-filter-container', buttons: ['products-container', 'time-filter-container'] } // También cuando estamos en el filtro
         ];
 
-        let activeSection = null;
+        let activeSectionButtons = [];
 
         // Encontrar qué sección está visible
-        sections.forEach(sectionId => {
-            const section = document.getElementById(sectionId);
-            if (section) {
+        sections.forEach(sectionConfig => {
+            const section = document.getElementById(sectionConfig.id);
+            if (section && section.style.display !== 'none') {
                 const sectionTop = section.offsetTop;
                 const sectionBottom = sectionTop + section.offsetHeight;
 
                 if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-                    activeSection = sectionId;
+                    activeSectionButtons = sectionConfig.buttons;
                 }
             }
         });
@@ -2068,7 +2224,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Actualizar clase active en botones
         navButtons.forEach(button => {
             const targetId = button.getAttribute('data-target');
-            if (targetId === activeSection) {
+            if (activeSectionButtons.includes(targetId)) {
                 button.classList.add('active');
             } else {
                 button.classList.remove('active');
