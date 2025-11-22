@@ -1018,3 +1018,126 @@ input[type="number"].form-control::-webkit-inner-spin-button {
         padding: 5px 10px;
     }
 }
+
+/* ===================================
+   BOTONES DE NAVEGACIÓN FLOTANTES
+   =================================== */
+
+.floating-nav {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 999;
+    transition: opacity 0.3s ease;
+}
+
+.nav-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0824a4 0%, #1a3ec7 100%);
+    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(8, 36, 164, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(8, 36, 164, 0.5);
+    background: linear-gradient(135deg, #0a2dcc 0%, #1f4ae0 100%);
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+}
+
+.nav-btn.active {
+    background: linear-gradient(135deg, #FF5722 0%, #ff7043 100%);
+    border-color: #FFE0B2;
+}
+
+.nav-icon {
+    font-size: 22px;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Botón especial para scroll to top */
+.nav-btn.scroll-top {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-color: white;
+    margin-top: 10px;
+}
+
+.nav-btn.scroll-top:hover {
+    background: linear-gradient(135deg, #45a049 0%, #5cb85f 100%);
+}
+
+/* Tooltip en hover */
+.nav-btn::before {
+    content: attr(title);
+    position: absolute;
+    right: 60px;
+    background: rgba(44, 62, 80, 0.95);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-btn:hover::before {
+    opacity: 1;
+}
+
+/* Responsive - ocultar en móviles */
+@media (max-width: 768px) {
+    .floating-nav {
+        right: 10px;
+        gap: 8px;
+    }
+
+    .nav-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .nav-icon {
+        font-size: 20px;
+    }
+
+    /* Ocultar tooltips en móvil */
+    .nav-btn::before {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .floating-nav {
+        right: 5px;
+        gap: 6px;
+    }
+
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+        border-width: 1px;
+    }
+
+    .nav-icon {
+        font-size: 18px;
+    }
+}

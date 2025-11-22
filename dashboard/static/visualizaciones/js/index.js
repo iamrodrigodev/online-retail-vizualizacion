@@ -2001,4 +2001,84 @@ document.addEventListener('DOMContentLoaded', function () {
     if (categoryFilter && subcategoryFilter) {
         loadProductCategories();
     }
+
+    // ====================================
+    // NAVEGACIÓN FLOTANTE
+    // ====================================
+
+    const navButtons = document.querySelectorAll('.nav-btn');
+
+    // Smooth scroll al hacer click en los botones
+    navButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+
+            // Si es el botón "scroll to top"
+            if (this.classList.contains('scroll-top')) {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                return;
+            }
+
+            // Para otros botones, scroll al contenedor correspondiente
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                const offset = 80; // Offset para el navbar
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Scroll spy: resaltar botón activo según sección visible
+    function updateActiveNavButton() {
+        const scrollPosition = window.scrollY + 150;
+
+        // Array de secciones en orden
+        const sections = [
+            'worldMap',
+            'customerProfiles',
+            'sales-container',
+            'products-container',
+            'client-similarity-container'
+        ];
+
+        let activeSection = null;
+
+        // Encontrar qué sección está visible
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const sectionTop = section.offsetTop;
+                const sectionBottom = sectionTop + section.offsetHeight;
+
+                if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+                    activeSection = sectionId;
+                }
+            }
+        });
+
+        // Actualizar clase active en botones
+        navButtons.forEach(button => {
+            const targetId = button.getAttribute('data-target');
+            if (targetId === activeSection) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
+
+    // Ejecutar scroll spy al hacer scroll
+    window.addEventListener('scroll', updateActiveNavButton);
+
+    // Ejecutar al cargar
+    updateActiveNavButton();
 });
