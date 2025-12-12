@@ -33,6 +33,208 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     const selectedColor = '#0824a4'; // Color La Salle para selección
 
+    // ====================================
+    // FUNCIONES DEL MODAL DE VENTAS (definir ANTES de usarlas)
+    // ====================================
+
+    // Función para formatear números como moneda
+    function formatCurrency(value) {
+        return `£${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+    }
+
+    // Función para formatear números con comas
+    function formatNumber(value) {
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Función para obtener icono de dirección
+    function getDirectionIcon(direction) {
+        if (direction === 'up') return '↗️';
+        if (direction === 'down') return '↘️';
+        return '→';
+    }
+
+    // Función para obtener clase CSS según perfil
+    function getProfileClass(profile) {
+        const normalized = profile.toLowerCase().replace(/\s+/g, '-');
+        return `profile-${normalized}`;
+    }
+
+    // Función para abrir modal con datos del día
+    function openSalesDetailModal(date) {
+        const salesDetailModal = document.getElementById('salesDetailModal');
+
+        // Construir URL con filtros actuales
+        const params = new URLSearchParams();
+        if (selectedCountry) params.append('country', selectedCountry);
+        if (selectedProfile) params.append('profile', selectedProfile);
+        if (selectedStartDate) params.append('start_date', selectedStartDate);
+        if (selectedEndDate) params.append('end_date', selectedEndDate);
+
+        const url = `/api/sales-detail/${date}/?${params.toString()}`;
+
+        // Mostrar modal con loader
+        salesDetailModal.classList.add('show');
+        document.getElementById('modalTitle').textContent = `Cargando análisis del ${date}...`;
+
+        // Fetch datos del día
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    salesDetailModal.classList.remove('show');
+                    return;
+                }
+
+                // Renderizar datos en el modal
+                renderSalesDetail(data);
+            })
+            .catch(error => {
+                console.error('Error al obtener detalle de ventas:', error);
+                alert('Error al cargar los datos del día. Por favor, intenta de nuevo.');
+                salesDetailModal.classList.remove('show');
+            });
+    }
+
+    // Función para renderizar datos del día en el modal
+    function renderSalesDetail(data) {
+        // Actualizar título
+        const formattedDate = new Date(data.date + 'T00:00:00').toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('modalTitle').textContent = formattedDate;
+
+        // Sección 1: Resumen del Día
+        document.getElementById('totalSales').textContent = formatCurrency(data.summary.total_sales);
+        document.getElementById('totalTransactions').textContent = formatNumber(data.summary.transactions);
+        document.getElementById('uniqueCustomers').textContent = formatNumber(data.summary.unique_customers);
+        document.getElementById('uniqueProducts').textContent = formatNumber(data.summary.unique_products);
+        document.getElementById('avgTransaction').textContent = formatCurrency(data.summary.avg_transaction_value);
+        document.getElementById('totalQuantity').textContent = formatNumber(data.summary.total_quantity);
+
+        // Sección 2: Análisis Comparativo
+        const comparisonsContainer = document.getElementById('comparisonsContainer');
+        comparisonsContainer.innerHTML = '';
+
+        const comparisonTitles = {
+            'vs_previous_day': 'vs. Día Anterior',
+            'vs_month_avg': 'vs. Promedio del Mes',
+            'vs_week_before': 'vs. Semana Anterior',
+            'vs_year_before': 'vs. Año Anterior'
+        };
+
+        for (const [key, comparison] of Object.entries(data.comparisons)) {
+            if (comparison) {
+                const card = document.createElement('div');
+                card.className = `comparison-card ${comparison.direction}`;
+                card.innerHTML = `
+                    <div class="comparison-title">${comparisonTitles[key]}</div>
+                    <div class="comparison-value ${comparison.direction}">
+                        ${getDirectionIcon(comparison.direction)} ${comparison.change_pct >= 0 ? '+' : ''}${comparison.change_pct.toFixed(1)}%
+                    </div>
+                    <div class="comparison-detail">
+                        ${formatCurrency(comparison.current)} (${comparison.change_abs >= 0 ? '+' : ''}${formatCurrency(comparison.change_abs)})
+                    </div>
+                `;
+                comparisonsContainer.appendChild(card);
+            }
+        }
+
+        if (comparisonsContainer.children.length === 0) {
+            comparisonsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-text">No hay datos comparativos disponibles</div></div>';
+        }
+
+        // Sección 3: Top 5 Productos
+        const topProductsContainer = document.getElementById('topProductsContainer');
+        topProductsContainer.innerHTML = '';
+
+        if (data.top_products && data.top_products.length > 0) {
+            data.top_products.forEach((product, index) => {
+                const item = document.createElement('div');
+                item.className = 'top-item';
+                item.innerHTML = `
+                    <div class="top-item-rank">#${index + 1}</div>
+                    <div class="top-item-info">
+                        <div class="top-item-name">${product.description}</div>
+                        <div class="top-item-details">
+                            ${formatNumber(product.quantity)} unidades vendidas
+                        </div>
+                        <div class="contribution-bar">
+                            <div class="contribution-bar-fill" style="width: ${product.contribution_pct}%"></div>
+                        </div>
+                    </div>
+                    <div class="top-item-stats">
+                        <div class="top-item-value">${formatCurrency(product.sales)}</div>
+                        <div class="top-item-contribution">${product.contribution_pct.toFixed(1)}% del día</div>
+                    </div>
+                `;
+                topProductsContainer.appendChild(item);
+            });
+        } else {
+            topProductsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No hay productos disponibles</div></div>';
+        }
+
+        // Sección 4: Top 5 Clientes
+        const topCustomersContainer = document.getElementById('topCustomersContainer');
+        topCustomersContainer.innerHTML = '';
+
+        if (data.top_customers && data.top_customers.length > 0) {
+            data.top_customers.forEach((customer, index) => {
+                const item = document.createElement('div');
+                item.className = 'top-item';
+                item.innerHTML = `
+                    <div class="top-item-rank">#${index + 1}</div>
+                    <div class="top-item-info">
+                        <div class="top-item-name">
+                            Cliente ${customer.customer_id}
+                            <span class="top-item-profile ${getProfileClass(customer.profile)}">${customer.profile}</span>
+                        </div>
+                        <div class="top-item-details">
+                            ${customer.transactions} transacción${customer.transactions > 1 ? 'es' : ''}
+                        </div>
+                        <div class="contribution-bar">
+                            <div class="contribution-bar-fill" style="width: ${customer.contribution_pct}%"></div>
+                        </div>
+                    </div>
+                    <div class="top-item-stats">
+                        <div class="top-item-value">${formatCurrency(customer.total_spent)}</div>
+                        <div class="top-item-contribution">${customer.contribution_pct.toFixed(1)}% del día</div>
+                    </div>
+                `;
+                topCustomersContainer.appendChild(item);
+            });
+        } else {
+            topCustomersContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">No hay clientes disponibles</div></div>';
+        }
+
+        // Sección 5: Insights Automáticos
+        const insightsContainer = document.getElementById('insightsContainer');
+        insightsContainer.innerHTML = '';
+
+        if (data.insights && data.insights.length > 0) {
+            data.insights.forEach(insight => {
+                const card = document.createElement('div');
+                card.className = `insight-card ${insight.type}`;
+                card.innerHTML = `
+                    <div class="insight-icon">${insight.icon}</div>
+                    <div class="insight-message">${insight.message}</div>
+                `;
+                insightsContainer.appendChild(card);
+            });
+        } else {
+            insightsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🤖</div><div class="empty-state-text">No hay insights disponibles</div></div>';
+        }
+    }
+
     if (mapDiv && profilesDiv && salesDiv && productsDiv && contentContainer && salesContainer &&
         productsContainer && loader && timeFilterContainer &&
         typeof Plotly !== 'undefined' &&
@@ -454,13 +656,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => response.json())
                 .then(data => {
                     const graphData = JSON.parse(data.graph);
-                    
-                    Plotly.react(salesDiv, graphData.data, graphData.layout).then(function() {
-                        // Mantener dragmode en zoom (no deshabilitarlo)
+
+                    Plotly.react(salesDiv, graphData.data, graphData.layout, {
+                        responsive: true,
+                        displayModeBar: true,
+                        modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                        staticPlot: false
+                    }).then(function() {
+                        // Configurar para permitir clicks
                         Plotly.relayout(salesDiv, {
-                            'dragmode': 'zoom'
+                            'dragmode': false,  // Deshabilitar zoom para permitir clicks
+                            'hovermode': 'x unified'
                         });
-                        
+
+                        // Re-registrar evento de click después de actualizar
+                        salesDiv.on('plotly_click', function(data) {
+                            console.log('¡CLICK EN VENTAS (desde update)!', data);
+                            if (data.points && data.points.length > 0) {
+                                const clickedDate = data.points[0].x;
+                                console.log('Fecha:', clickedDate);
+                                if (typeof openSalesDetailModal === 'function') {
+                                    openSalesDetailModal(clickedDate);
+                                }
+                            }
+                        });
+
                         // Actualizar el texto de rango de fecha
                         if (salesTrendDateRange) {
                             salesTrendDateRange.innerHTML = generateRangeText('sales');
@@ -654,10 +874,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 modeBarButtonsToRemove: ['lasso2d', 'select2d'],  // Quitar herramientas innecesarias
                 staticPlot: false
             }).then(function() {
-                // Mantener dragmode en zoom
+                // Configurar para permitir clicks (sin zoom drag)
                 Plotly.relayout(salesDiv, {
-                    'dragmode': 'zoom'
+                    'dragmode': false,  // Deshabilitar zoom para permitir clicks
+                    'hovermode': 'x unified'
                 });
+
+                // Registrar evento de click AQUÍ, después de renderizar
+                salesDiv.on('plotly_click', function(data) {
+                    console.log('¡CLICK EN VENTAS (desde render inicial)!', data);
+                    if (data.points && data.points.length > 0) {
+                        const clickedDate = data.points[0].x;
+                        console.log('Fecha:', clickedDate);
+                        // Llamar a la función que abre el modal
+                        if (typeof openSalesDetailModal === 'function') {
+                            openSalesDetailModal(clickedDate);
+                        }
+                    }
+                });
+
+                console.log('Evento click registrado en gráfico de ventas (inicial)');
             });
         }).then(function() {
             // Renderizar el gráfico de top productos
@@ -2157,6 +2393,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (categoryFilter && subcategoryFilter) {
         loadProductCategories();
     }
+
+    // ====================================
+    // EVENTOS DEL MODAL DE VENTAS
+    // ====================================
+
+    // Event listener para cerrar modal
+    const modalClose = document.querySelector('.modal-close');
+    const salesDetailModal = document.getElementById('salesDetailModal');
+
+    if (modalClose) {
+        modalClose.addEventListener('click', function() {
+            salesDetailModal.classList.remove('show');
+        });
+    }
+
+    // Cerrar modal al hacer click fuera de él
+    window.addEventListener('click', function(event) {
+        if (event.target === salesDetailModal) {
+            salesDetailModal.classList.remove('show');
+        }
+    });
 
     // ====================================
     // NAVEGACIÓN FLOTANTE

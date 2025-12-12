@@ -261,6 +261,90 @@
         </button>
     </div>
 
+    <!-- Modal de Detalle de Ventas -->
+    <div id="salesDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Análisis Detallado del Día</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Sección 1: Resumen del Día -->
+                <div class="detail-section">
+                    <h3 class="section-title">📊 Resumen del Día</h3>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-icon">💰</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Ventas Totales</span>
+                                <span class="summary-value" id="totalSales">£0.00</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon">🛒</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Transacciones</span>
+                                <span class="summary-value" id="totalTransactions">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon">👥</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Clientes Únicos</span>
+                                <span class="summary-value" id="uniqueCustomers">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon">📦</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Productos Únicos</span>
+                                <span class="summary-value" id="uniqueProducts">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon">🎫</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Ticket Promedio</span>
+                                <span class="summary-value" id="avgTransaction">£0.00</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon">📊</div>
+                            <div class="summary-content">
+                                <span class="summary-label">Cantidad Total</span>
+                                <span class="summary-value" id="totalQuantity">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Análisis Comparativo -->
+                <div class="detail-section">
+                    <h3 class="section-title">📈 Análisis Comparativo</h3>
+                    <div id="comparisonsContainer" class="comparisons-container"></div>
+                </div>
+
+                <!-- Sección 3: Top 5 Productos -->
+                <div class="detail-section">
+                    <h3 class="section-title">🏆 Top 5 Productos del Día</h3>
+                    <div id="topProductsContainer" class="top-items-container"></div>
+                </div>
+
+                <!-- Sección 4: Top 5 Clientes -->
+                <div class="detail-section">
+                    <h3 class="section-title">👤 Top 5 Clientes del Día</h3>
+                    <div id="topCustomersContainer" class="top-items-container"></div>
+                </div>
+
+                <!-- Sección 5: Insights Automáticos -->
+                <div class="detail-section">
+                    <h3 class="section-title">🤖 Insights Automáticos</h3>
+                    <div id="insightsContainer" class="insights-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <span>

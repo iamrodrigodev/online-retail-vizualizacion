@@ -143,9 +143,9 @@ def create_sales_trend_plot(country=None, customer_profile=None, start_date=None
         ),
         showlegend=False,  # Ocultar la leyenda de años
         margin={"r": 5, "t": 95, "l": 40, "b": 50},
-        dragmode='zoom',  # Permitir zoom con selección
-        xaxis_fixedrange=False,  # Permitir zoom en X
-        yaxis_fixedrange=False,   # Permitir zoom en Y
+        dragmode=False,  # Deshabilitar drag para permitir clicks
+        xaxis_fixedrange=False,  # Permitir zoom con botones
+        yaxis_fixedrange=False,   # Permitir zoom con botones
         annotations=[
             dict(
                 text=f'Total de ventas: £{total_sales_amount:,.2f}',

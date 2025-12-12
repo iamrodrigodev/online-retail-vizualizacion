@@ -15,6 +15,7 @@ from .visualizations.client_similarity.data_processor import (
 )
 from .visualizations.client_similarity.plot import create_client_similarity_plot
 from .visualizations.products.data_processor import get_categories_and_subcategories
+from .visualizations.sales.detail_analyzer import get_daily_sales_detail
 import polars as pl
 
 @ensure_csrf_cookie
@@ -473,6 +474,55 @@ def get_products_by_customers(request):
         return JsonResponse({'error': 'JSON inválido'}, status=400)
     except Exception as e:
         print(f"Error en get_products_by_customers: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_sales_detail(request, date):
+    """
+    API endpoint para obtener análisis detallado de ventas de un día específico
+
+    Args:
+        date: Fecha en formato YYYY-MM-DD
+
+    Query params:
+        country: País para filtrar (opcional)
+        profile: Perfil de cliente para filtrar (opcional)
+        start_date: Fecha de inicio del rango general (opcional)
+        end_date: Fecha de fin del rango general (opcional)
+    """
+    try:
+        # Obtener filtros opcionales
+        country = request.GET.get('country', None)
+        customer_profile = request.GET.get('profile', None)
+        start_date = request.GET.get('start_date', None)
+        end_date = request.GET.get('end_date', None)
+
+        print(f"DEBUG - get_sales_detail: date={date}, country={country}, profile={customer_profile}")
+
+        # Obtener análisis detallado
+        detail = get_daily_sales_detail(
+            date_str=date,
+            country=country,
+            customer_profile=customer_profile,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        if detail is None:
+            return JsonResponse({
+                'error': f'No hay datos disponibles para la fecha {date}'
+            }, status=404)
+
+        return JsonResponse(detail)
+
+    except ValueError as e:
+        return JsonResponse({
+            'error': f'Formato de fecha inválido: {str(e)}'
+        }, status=400)
+    except Exception as e:
+        print(f"Error en get_sales_detail: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
