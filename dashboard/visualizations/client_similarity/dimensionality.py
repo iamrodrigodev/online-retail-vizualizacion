@@ -33,7 +33,7 @@ def apply_pca(X, n_components=2, random_state=42):
                      'AvgUnitPrice', 'AvgOrderValue', 'UniqueProducts']
     
     # SIEMPRE usar randomized SVD - es más rápido y usa menos memoria
-    # Esto es especialmente importante en Railway con límites de recursos
+    # Esto es especialmente importante en Render con límites de recursos
     pca = PCA(n_components=n_components, svd_solver='randomized', random_state=random_state)
     
     # Transformar y convertir a float32

@@ -1136,7 +1136,7 @@ PASO 10: RENDERIZADO WEB
 
 ### Optimizaciones de Performance Implementadas
 
-El sistema está optimizado para despliegue en **Railway** (recursos limitados):
+El sistema está optimizado para despliegue en **Render** (recursos limitados):
 
 1. **Gestión de Memoria**:
    - Uso de `float32` en vez de `float64` (50% menos memoria)
@@ -1225,7 +1225,7 @@ Output (Visualización interactiva)
 | Clustering | K-Means standalone | K-Means + validación con perfiles IQR |
 | Outliers | Ignorados o removidos | Detectados y visualizados (valiosos) |
 | Interactividad | Tablas/dashboards estáticos | Filtros dinámicos + drill-down |
-| Escalabilidad | Problemas con n>10k | Optimizado para Railway (float32, SVD randomized) |
+| Escalabilidad | Problemas con n>10k | Optimizado para Render (float32, SVD randomized) |
 
 **Ejemplo de Caso de Uso**:
 
@@ -1269,11 +1269,11 @@ Imaginemos un cliente `12345` clasificado como "Minorista Lujo":
 **Despliegue**:
 - Gunicorn (WSGI server)
 - WhiteNoise (Servir archivos estáticos)
-- Railway (PaaS: PostgreSQL, auto-deploy desde Git)
+- Render (PaaS: PostgreSQL, auto-deploy desde Git)
 
 **Datos**:
 - Fuente: CSV en GitHub (público)
-- Producción: PostgreSQL (Railway)
+- Producción: PostgreSQL (Render)
 - Desarrollo: SQLite
 
 ### Estructura Modular

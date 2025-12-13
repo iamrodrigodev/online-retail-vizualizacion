@@ -29,7 +29,7 @@ def apply_kmeans_clustering(X, n_clusters=5, random_state=42):
         # Si hay muy pocos datos, asignar todos al mismo cluster
         return np.zeros(n_samples, dtype=np.int32)
     
-    # SIEMPRE usar 'elkan' y reducir iteraciones para Railway
+    # SIEMPRE usar 'elkan' y reducir iteraciones para Render
     # Elkan es más eficiente en memoria y más rápido
     kmeans = KMeans(
         n_clusters=n_clusters, 

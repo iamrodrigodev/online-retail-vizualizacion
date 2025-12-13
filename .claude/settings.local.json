@@ -3,7 +3,8 @@
     "allow": [
       "Bash(if exist .cursorrules dir .cursorrules /b)",
       "Bash(python manage.py collectstatic:*)",
-      "Bash(python manage.py check:*)"
+      "Bash(python manage.py check:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

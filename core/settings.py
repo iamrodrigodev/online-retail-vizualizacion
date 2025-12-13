@@ -6,22 +6,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', default='your-secret-key')
 
-DEBUG = True
+DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-if 'RAILWAY_PUBLIC_DOMAIN' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['RAILWAY_PUBLIC_DOMAIN'])
-    ALLOWED_HOSTS.append('.' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
-
-if 'RAILWAY_STATIC_URL' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['RAILWAY_STATIC_URL'])
-    ALLOWED_HOSTS.append('.' + os.environ['RAILWAY_STATIC_URL'])
+# Configuración para Render
+if 'RENDER' in os.environ:
+    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME', ''))
 
 CSRF_TRUSTED_ORIGINS = []
-if 'RAILWAY_PUBLIC_DOMAIN' in os.environ:
-    CSRF_TRUSTED_ORIGINS.append('https://' + os.environ['RAILWAY_PUBLIC_DOMAIN'])
-    # Configuración para producción (Railway)
+if 'RENDER' in os.environ:
+    CSRF_TRUSTED_ORIGINS.append('https://' + os.environ.get('RENDER_EXTERNAL_HOSTNAME', ''))
+    # Configuración para producción (Render)
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = False  # Permite que JavaScript acceda a la cookie CSRF

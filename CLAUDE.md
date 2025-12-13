@@ -29,7 +29,7 @@ python manage.py collectstatic
 
 ### Database Configuration
 - **Local**: SQLite (`db.sqlite3`)
-- **Production**: PostgreSQL via `DATABASE_URL` environment variable (Railway)
+- **Production**: PostgreSQL via `DATABASE_URL` environment variable (Render)
 - Auto-detects environment based on `DATABASE_URL` presence
 
 ### Testing
@@ -164,7 +164,7 @@ Outlier if x > Q3 + 1.5×IQR
 **Production**:
 - Gunicorn (WSGI server)
 - WhiteNoise (static file serving with compression)
-- Railway (PaaS, PostgreSQL)
+- Render (PaaS, PostgreSQL)
 
 ## Data Source
 
@@ -179,16 +179,30 @@ Outlier if x > Q3 + 1.5×IQR
 - 38 countries
 - Period: 01/12/2010 - 09/12/2011
 
-## Deployment (Railway)
+## Deployment (Render)
 
-**Procfile**:
+**Build Command** (`build.sh`):
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+python manage.py collectstatic --no-input
+python manage.py migrate
 ```
-web: python manage.py collectstatic --noinput && gunicorn core.wsgi --log-file -
+
+**Start Command** (Procfile):
 ```
+web: gunicorn core.wsgi --log-file -
+```
+
+**Environment Variables**:
+- `DATABASE_URL`: PostgreSQL connection string (auto-provided by Render)
+- `SECRET_KEY`: Django secret key (set manually)
+- `RENDER`: Set to `true` for production mode
+- `RENDER_EXTERNAL_HOSTNAME`: Your app's hostname (auto-provided by Render)
 
 **Environment Detection**:
+- `RENDER`: Switches DEBUG to False, enables secure cookies
 - `DATABASE_URL`: Switches to PostgreSQL
-- `RAILWAY_PUBLIC_DOMAIN`: Sets ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, secure cookies
 
 **Security**:
 - CSRF protection enabled
